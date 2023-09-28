@@ -1,7 +1,7 @@
-import React from 'react';
+import React from "react";
 
 function Home() {
-  return <h1>Clone do tabnews</h1>
+  return <h1>Clone do tabnews</h1>;
 }
 
-export default Home
+export default Home;
