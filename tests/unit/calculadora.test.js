@@ -3,7 +3,7 @@ const {
   subtrair,
   dividir,
   multiplicar,
-} = require("../models/calculadora");
+} = require("../../models/calculadora");
 
 describe("Calculadora", () => {
   describe("somar", () => {
