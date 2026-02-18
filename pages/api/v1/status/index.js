@@ -12,7 +12,9 @@ async function status(request, response) {
   const maxConnections = selectMaxConnections.rows[0].max_connections;
 
   // Execute a consulta SQL para obter o número de conexões atualmente usadas
-  const selectUsedConnections = await database.query("SELECT COUNT(*) FROM pg_stat_activity;");
+  const selectUsedConnections = await database.query(
+    "SELECT COUNT(*) FROM pg_stat_activity;",
+  );
   const usedConnections = selectUsedConnections.rows[0].count;
 
   response.status(200).json({

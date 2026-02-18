@@ -1,8 +1,9 @@
 services:
   database:
     image: "postgres:16.0-alpine3.18"
+    # alpine é a versão linux mais leve e mais rápida do postgres consumindo apenas 10mb de memória, ideal para desenvolvimento e testes
     env_file:
       - ../.env.development
-      
+
     ports:
       - "5432:5432"
