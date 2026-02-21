@@ -12,19 +12,22 @@ describe("GET to /api/v1/status", () => {
     expect(parsedUpdateAt).toEqual(responseBody.update_at);
   });
 
-  test("deve retornar a versão do postgres", async () => {
+  test("deve retornar a versão 16.0 do postgres", async () => {
     const response = await fetch("http://localhost:3000/api/v1/status");
     const responseBody = await response.json();
     expect(responseBody.postgres_version).toBeDefined();
-    expect(typeof responseBody.postgres_version).toBe("string");
+    // expect(typeof responseBody.postgres_version).toBe("string");
+    expect(responseBody.postgres_version).toEqual("16.0");
   });
 
   test("deve retornar a quantidade maxima de conexões do banco", async () => {
     const response = await fetch("http://localhost:3000/api/v1/status");
     const responseBody = await response.json();
     expect(responseBody.max_connections).toBeDefined();
-    expect(typeof responseBody.max_connections).toBe("number"); 
-    expect(responseBody.max_connections).toBeGreaterThanOrEqual(responseBody.used_connections);
+    expect(typeof responseBody.max_connections).toBe("number");
+    expect(responseBody.max_connections).toBeGreaterThanOrEqual(
+      responseBody.used_connections,
+    );
   });
 
   test("deve retornar a quantidade de conexões atualmente usadas no banco", async () => {
@@ -32,5 +35,6 @@ describe("GET to /api/v1/status", () => {
     const responseBody = await response.json();
     expect(responseBody.used_connections).toBeDefined();
     expect(typeof responseBody.used_connections).toBe("number");
+    expect(responseBody.used_connections).toEqual(1);
   });
 });
