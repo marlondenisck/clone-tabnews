@@ -17,9 +17,12 @@ async function status(request, response) {
   // Execute a consulta SQL para obter o número de conexões atualmente usadas
   // o ::int é para converter o resultado para inteiro, pois o COUNT retorna uma string
   // o datname = 'tabnews' é para filtrar apenas as conexões do banco de dados tabnews, caso contrário, ele contaria todas as conexões de todos os bancos de dados
-  const selectUsedConnections = await database.query(
-    "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = 'tabnews';",
-  );
+  // const dataBaseName = request.query.datname;
+  const dataBaseName = process.env.POSTGRES_DB;
+  const selectUsedConnections = await database.query({
+    text: "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1;",
+    values: [dataBaseName],
+  });
   const usedConnections = selectUsedConnections.rows[0].count;
 
   response.status(200).json({
