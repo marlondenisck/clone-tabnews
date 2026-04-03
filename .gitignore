@@ -2,3 +2,5 @@ node_modules
 .next
 .env
 .env.development
+.env.homolog
+.env.production
