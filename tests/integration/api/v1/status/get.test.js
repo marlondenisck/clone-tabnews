@@ -36,7 +36,7 @@ describe("GET to /api/v1/status", () => {
   test("deve retornar a quantidade de conexões atualmente usadas no banco", async () => {
     const response = await fetch("http://localhost:3000/api/v1/status");
     const responseBody = await response.json();
-    console.log("Used Connections:", responseBody.used_connections);
+    // console.log("Used Connections:", responseBody.used_connections);
     //  Por que está mostrando 27 conexões:
     // Cada requisição abre 3 conexões - No endpoint index.js, são feitas 3 queries (linhas 7, 13 e 22):
     // SHOW server_version
