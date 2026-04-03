@@ -16,8 +16,11 @@ describe("GET to /api/v1/status", () => {
     const response = await fetch("http://localhost:3000/api/v1/status");
     const responseBody = await response.json();
     expect(responseBody.postgres_version).toBeDefined();
-    // expect(typeof responseBody.postgres_version).toBe("string");
-    expect(responseBody.postgres_version).toEqual("16.0");
+    expect(typeof responseBody.postgres_version).toBe("string");
+
+    const parsedVersion = Number.parseFloat(responseBody.postgres_version);
+    expect(Number.isNaN(parsedVersion)).toBe(false);
+    expect(parsedVersion).toBeGreaterThanOrEqual(16.0);
   });
 
   test("deve retornar a quantidade maxima de conexões do banco", async () => {
