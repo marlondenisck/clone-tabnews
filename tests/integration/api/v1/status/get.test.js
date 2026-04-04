@@ -1,4 +1,8 @@
 describe("GET to /api/v1/status", () => {
+  test("deve executar com NODE_ENV=test", () => {
+    expect(process.env.NODE_ENV).toBe("test");
+  });
+
   test("deve retornar status 200", async () => {
     const response = await fetch("http://localhost:3000/api/v1/status");
     expect(response.status).toBe(200);
