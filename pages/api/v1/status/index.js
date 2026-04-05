@@ -2,34 +2,39 @@ import database from "infra/database";
 
 async function status(request, response) {
   const updateAt = new Date().toISOString();
+  const client = await database.getNewClient();
 
-  // Execute a consulta SQL para obter a versão do PostgreSQL
-  const databaseVersionResult = await database.query("SHOW server_version;");
-  const databaseVersion = databaseVersionResult.rows[0].server_version;
-  // outra forma de fazer a mesma coisa
-  // const selectVersion = await database.query("SELECT version()");
-  // const postgresVersion = selectVersion.rows[0].version;
+  try {
+    // Execute a consulta SQL para obter a versão do PostgreSQL
+    const databaseVersionResult = await client.query("SHOW server_version;");
+    const databaseVersion = databaseVersionResult.rows[0].server_version;
+    // outra forma de fazer a mesma coisa
+    // const selectVersion = await client.query("SELECT version()");
+    // const postgresVersion = selectVersion.rows[0].version;
 
-  // Execute a consulta SQL para obter o número máximo de conexões
-  const selectMaxConnections = await database.query("SHOW max_connections;");
-  const maxConnections = selectMaxConnections.rows[0].max_connections;
+    // Execute a consulta SQL para obter o número máximo de conexões
+    const selectMaxConnections = await client.query("SHOW max_connections;");
+    const maxConnections = selectMaxConnections.rows[0].max_connections;
 
-  // Execute a consulta SQL para obter o número de conexões atualmente usadas
-  // o ::int é para converter o resultado para inteiro, pois o COUNT retorna uma string
-  // o datname = 'tabnews' é para filtrar apenas as conexões do banco de dados tabnews, caso contrário, ele contaria todas as conexões de todos os bancos de dados
-  // const dataBaseName = request.query.datname;
-  const dataBaseName = process.env.POSTGRES_DB;
-  const selectUsedConnections = await database.query({
-    text: "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1;",
-    values: [dataBaseName],
-  });
-  const usedConnections = selectUsedConnections.rows[0].count;
+    // Execute a consulta SQL para obter o número de conexões atualmente usadas
+    // o ::int é para converter o resultado para inteiro, pois o COUNT retorna uma string
+    // o datname = 'tabnews' é para filtrar apenas as conexões do banco de dados tabnews, caso contrário, ele contaria todas as conexões de todos os bancos de dados
+    // const dataBaseName = request.query.datname;
+    const dataBaseName = process.env.POSTGRES_DB;
+    const selectUsedConnections = await client.query({
+      text: "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1 AND state = 'active';",
+      values: [dataBaseName],
+    });
+    const usedConnections = selectUsedConnections.rows[0].count;
 
-  response.status(200).json({
-    update_at: updateAt,
-    postgres_version: databaseVersion,
-    max_connections: +maxConnections,
-    used_connections: +usedConnections,
-  });
+    response.status(200).json({
+      update_at: updateAt,
+      postgres_version: databaseVersion,
+      max_connections: +maxConnections,
+      used_connections: +usedConnections,
+    });
+  } finally {
+    await client.end();
+  }
 }
 export default status;
