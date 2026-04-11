@@ -15,4 +15,11 @@ jobs:
 
       - run: npm ci
 
+      - name: Create CI env file
+        run: cp .env.example .env.development
+
       - run: npm test
+
+      - name: Stop services
+        run: npm run services:down
+        if: always()
