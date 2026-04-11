@@ -1,3 +1,9 @@
+import orchestrator from "tests/orchestrator";
+
+beforeAll(async () => {
+  await orchestrator.waitForAllServices();
+});
+
 describe("GET to /api/v1/status", () => {
   test("deve executar com NODE_ENV=test", () => {
     expect(process.env.NODE_ENV).toBe("test");
