@@ -1,0 +1,25 @@
+name: Automated Tests
+
+on: pull_request
+
+jobs:
+  jest:
+    name: Jest Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/hydrogen"
+
+      - run: npm ci
+
+      - name: Create CI env file
+        run: cp .env.example .env.development
+
+      - run: npm test
+
+      - name: Stop services
+        run: npm run services:down
+        if: always()
