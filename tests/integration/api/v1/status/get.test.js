@@ -64,11 +64,19 @@ describe("GET to /api/v1/status", () => {
     expect(responseBody.used_connections).toEqual(1);
   });
 
-  // test.only("Teste de SQL Injection", async () => {
-  //   await fetch("http://localhost:3000/api/v1/status?datname='tabnews';");
-  //   await fetch("http://localhost:3000/api/v1/status?datname=';");
-  //   await fetch(
-  //     "http://localhost:3000/api/v1/status?datname='; SELECT pg_sleep(4); --",
-  //   );
-  // });
+  test("Teste de SQL Injection", async () => {
+    const response1 = await fetch(
+      "http://localhost:3000/api/v1/status?datname='tabnews';",
+    );
+    const response2 = await fetch(
+      "http://localhost:3000/api/v1/status?datname=';",
+    );
+    const response3 = await fetch(
+      "http://localhost:3000/api/v1/status?datname='; SELECT pg_sleep(4); --",
+    );
+
+    expect(response1.status).toBe(200);
+    expect(response2.status).toBe(200);
+    expect(response3.status).toBe(200);
+  });
 });
