@@ -11,15 +11,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "lts/hydrogen"
-
-      - run: npm ci
+          node-version: "20"
 
       - name: Create CI env file
         run: cp .env.example .env.development
 
+      - run: npm ci
+
       - run: npm test
 
       - name: Stop services
-        run: npm run services:down
+        run: npm run services:down || true
         if: always()
