@@ -1,0 +1,140 @@
+.container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 32px 24px;
+}
+
+.content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.heading {
+  font-family:
+    "Airbnb Cereal VF",
+    Circular,
+    -apple-system,
+    system-ui,
+    Roboto,
+    Helvetica Neue,
+    sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.44px;
+  line-height: 1.43;
+  color: #222222;
+  margin-bottom: 32px;
+  margin-top: 0;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow:
+    rgba(0, 0, 0, 0.02) 0px 0px 0px 1px,
+    rgba(0, 0, 0, 0.04) 0px 2px 6px,
+    rgba(0, 0, 0, 0.1) 0px 4px 8px;
+  padding: 32px;
+}
+
+.statsList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.statsItem {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 16px;
+}
+
+.statsItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.label {
+  font-family:
+    "Airbnb Cereal VF",
+    Circular,
+    -apple-system,
+    system-ui,
+    Roboto,
+    Helvetica Neue,
+    sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #6a6a6a;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+}
+
+.value,
+.valueTime {
+  font-family:
+    "Airbnb Cereal VF",
+    Circular,
+    -apple-system,
+    system-ui,
+    Roboto,
+    Helvetica Neue,
+    sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222222;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.valueTime {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.loading,
+.error {
+  font-family:
+    "Airbnb Cereal VF",
+    Circular,
+    -apple-system,
+    system-ui,
+    Roboto,
+    Helvetica Neue,
+    sans-serif;
+  font-size: 1rem;
+  line-height: 1.43;
+  margin: 0;
+}
+
+.loading {
+  color: #6a6a6a;
+}
+
+.error {
+  color: #c13515;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 744px) {
+  .container {
+    padding: 24px 16px;
+  }
+
+  .heading {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .statsList {
+    gap: 20px;
+  }
+}
