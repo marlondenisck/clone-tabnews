@@ -1,10 +1,11 @@
 import database from "infra/database";
+import { InternalServerError } from "infra/errors";
 
 async function status(request, response) {
-  const updateAt = new Date().toISOString();
-  const client = await database.getNewClient();
-
   try {
+    const updateAt = new Date().toISOString();
+    const client = await database.getNewClient();
+
     // Execute a consulta SQL para obter a versão do PostgreSQL
     const databaseVersionResult = await client.query("SHOW server_version;");
     const databaseVersion = databaseVersionResult.rows[0].server_version;
@@ -33,8 +34,13 @@ async function status(request, response) {
       max_connections: +maxConnections,
       used_connections: +usedConnections,
     });
-  } finally {
-    await client.end();
+  } catch (error) {
+    const publicErrorObject = new InternalServerError({
+      cause: error,
+    });
+    console.log("\n Error dentro do catch do controller status");
+    console.error(publicErrorObject);
+    response.status(500).json(publicErrorObject);
   }
 }
 export default status;
