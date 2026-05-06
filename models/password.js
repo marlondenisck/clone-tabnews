@@ -2,7 +2,6 @@ import bcryptjs from "bcryptjs";
 
 async function hash(plainTextPassword) {
   const rounds = getNumberOfSaltRounds();
-  console.log(`Hashing password with ${rounds} salt rounds.`);
   return await bcryptjs.hash(plainTextPassword, rounds);
 }
 
