@@ -69,7 +69,10 @@ async function update(username, userInputValues) {
   const currentUser = await findOneByUsername(username);
 
   if ("username" in userInputValues) {
-    await validateUniqueUsername(userInputValues.username);
+    await validateUniqueUsername(
+      userInputValues.username,
+      currentUser.username,
+    );
   }
 
   if ("email" in userInputValues) {
@@ -77,7 +80,7 @@ async function update(username, userInputValues) {
   }
 }
 
-async function validateUniqueUsername(username) {
+async function validateUniqueUsername(username, currentUsername = null) {
   const result = await database.query({
     text: `
         SELECT
@@ -86,8 +89,41 @@ async function validateUniqueUsername(username) {
           users 
         WHERE 
           LOWER(username) = LOWER($1)
+          AND ($2::text IS NULL OR LOWER(username) != LOWER($2))
       `,
-    values: [username],
+    /**
+       * LOWER(username) = LOWER($1)
+Procura registros cujo username seja igual ao novo username informado, ignorando maiúsculas/minúsculas.
+
+AND (...)
+Além de encontrar username igual ao novo, aplicamos uma segunda regra de filtro.
+
+$2::text IS NULL OR LOWER(username) != LOWER($2)
+Essa segunda regra tem dois comportamentos:
+
+Se $2 for NULL (caso de criação), a condição já é verdadeira e ninguém é excluído da checagem.
+Se $2 tiver valor (caso de atualização), excluímos da busca o usuário atual (o próprio dono), para não dar falso positivo.
+Como isso funciona na prática:
+
+No create:
+
+$1 = username novo
+$2 = NULL
+Resultado: qualquer registro com username igual conta como duplicado.
+No update:
+
+$1 = username que o usuário quer usar
+$2 = username atual do próprio usuário
+Resultado: se encontrar só ele mesmo, não acusa erro.
+Se encontrar outro usuário com esse username, acusa duplicado.
+Exemplo rápido:
+
+Usuário atual: joao
+Ele envia update com username: joao
+A consulta encontra joao, mas a parte LOWER(username) != LOWER($2) vira falso para ele mesmo, então esse registro é ignorado.
+Não há duplicado real, então passa.
+       */
+    values: [username, currentUsername],
   });
 
   if (result.rowCount > 0) {
