@@ -106,3 +106,33 @@ test("usuário loga e vê dashboard", async ({ page }) => {
 - **Unit:** Testa função `calculateDiscount()` ✅ Jest
 - **Integration:** Testa `<CartForm>` com estado + mock API ✅ Jest + React Testing Library
 - **E2E:** Testa "usuário adiciona produto ao carrinho e faz checkout" ✅ Playwright
+
+# Comandos curl
+
+## cria usuario
+
+`curl -v -X POST http://localhost:3000/api/v1/users \
+  --header "Content-Type: application/json" \
+  --data '{"email": "cookie@curso.dev", "username": "cookie", "password": "cookie"}'`
+
+## cria session
+
+`   curl -v -X POST http://localhost:3000/api/v1/sessions \
+  --header "Content-Type: application/json" \
+  --data '{"email": "cookie@curso.dev", "password": "cookie"}'  `
+
+## via console navegador
+
+`
+fetch('/api/v1/sessions', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+},
+body: JSON. stringify({
+email: 'cookieacurso.dev',
+password: "cookie"
+})
+})
+
+`

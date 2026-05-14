@@ -1,4 +1,6 @@
 import { version as uuidVersion } from "uuid";
+import setCookieParser from "set-cookie-parser";
+
 import orchestrator from "tests/orchestrator";
 import session from "models/session";
 
@@ -128,6 +130,23 @@ describe("POST /api/v1/sessions", () => {
       expiresAt.setMilliseconds(0);
       createdAt.setMilliseconds(0);
       expect(expiresAt - createdAt).toBe(session.EXPIRATION_IN_MILLISECONDS); // Verifica se a data de expiração é igual à data de criação mais o tempo de expiração definido
+
+      const parsedSetCookie = setCookieParser(response, {
+        map: true, // Retorna um objeto mapeado em vez de um array
+      });
+      expect(parsedSetCookie.session_id).toEqual({
+        name: "session_id",
+        value: responseBody.token,
+        maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
+        path: "/",
+        httpOnly: true,
+        sameSite: "Strict",
+      });
+
+      const setCookieHeader = response.headers.get("set-cookie");
+      expect(setCookieHeader).toContain("HttpOnly");
+      expect(setCookieHeader).toContain("SameSite=Strict");
+      expect(setCookieHeader).not.toContain("Secure");
     });
   });
 });
