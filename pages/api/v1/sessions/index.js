@@ -1,6 +1,7 @@
 import { createRouter } from "next-connect";
 import controller from "infra/controler";
 import authentication from "models/authentication";
+import session from "models/session";
 
 const router = createRouter();
 
@@ -10,10 +11,12 @@ export default router.handler(controller.errorHandlers);
 
 async function postHandler(request, response) {
   const userInputValues = request.body;
-  await authentication.getAuthenticateUser(
+  const authenticateUser = await authentication.getAuthenticateUser(
     userInputValues.email,
     userInputValues.password,
   );
 
-  return response.status(201).json({});
+  const newSession = await session.create(authenticateUser.id);
+
+  return response.status(201).json(newSession);
 }
