@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-A API do Clone TabNews é uma REST API construída com Next.js que fornece endpoints para gerenciar usuários, verificar o status do banco de dados e executar migrações.
+A API do Clone TabNews é uma REST API construída com Next.js que fornece endpoints para autenticar sessões, gerenciar usuários, verificar o status do banco de dados e executar migrações.
 
 **Versão:** v1  
 **Base URL:** `/api/v1`
@@ -87,7 +87,48 @@ Executa todas as migrações pendentes no banco de dados.
 
 ---
 
-### 3. Usuários
+### 3. Sessões
+
+#### POST `/api/v1/sessions`
+
+Autentica um usuário com email e senha.
+
+**Método:** POST
+
+**Body (application/json):**
+
+```json
+{
+  "email": "usuario@example.com",
+  "password": "senha_segura"
+}
+```
+
+**Resposta (201):**
+
+```json
+{}
+```
+
+**Erros:**
+
+- `401`: Dados de autenticação não conferem
+- `401`: Senha não confere
+
+Exemplo de erro (senha incorreta):
+
+```json
+{
+  "name": "UnauthorizedError",
+  "message": "Senha não confere.",
+  "action": "Verifique se este dado está correto.",
+  "status_code": 401
+}
+```
+
+---
+
+### 4. Usuários
 
 #### POST `/api/v1/users`
 
@@ -215,6 +256,8 @@ pages/api/
 └── v1/
     ├── migrations/
     │   └── index.js
+  ├── sessions/
+  │   └── index.js
     ├── status/
     │   └── index.js
     └── users/
@@ -228,6 +271,7 @@ pages/api/
 - **Router:** Utiliza `next-connect` para roteamento
 - **Controller:** Manipulador centralizado de erros em `infra/controler`
 - **Models:** Lógica de negócio em `models/`
+  - `authentication.js`: Autenticação de sessão
   - `user.js`: Operações com usuários
   - `migrator.js`: Gerenciamento de migrações
   - `password.js`: Operações com senhas
@@ -246,6 +290,7 @@ Os testes da API estão organizados em `tests/integration/api/v1/`:
 
 - `migrations/get.test.js`: Testes para GET /migrations
 - `migrations/post.test.js`: Testes para POST /migrations
+- `sessions/post.test.js`: Testes para POST /sessions
 - `status/get.test.js`: Testes para GET /status
 - `users/post.test.js`: Testes para POST /users
 - `users/[username]/get.test.js`: Testes para GET /users/[username]
@@ -261,7 +306,7 @@ npm test
 
 ## Próximos Passos
 
-- Adicionar autenticação (JWT/Sessions)
+- Completar autenticação com emissão de token/sessão persistida
 - Implementar paginação em endpoints de lista
 - Adicionar validação mais robusta de inputs
 - Implementar rate limiting

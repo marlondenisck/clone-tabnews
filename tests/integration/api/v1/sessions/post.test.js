@@ -39,7 +39,7 @@ describe("POST /api/v1/sessions", () => {
 
     test("Contem email correto mas, senha incorreta", async () => {
       await orchestrator.createUser({
-        email: "email-correto@example.com",
+        email: "email-correto1@example.com",
       });
 
       const response = await fetch("http://localhost:3000/api/v1/sessions", {
@@ -48,7 +48,7 @@ describe("POST /api/v1/sessions", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: "email-correto@example.com",
+          email: "email-correto1@example.com",
           password: "senha-errada",
         }),
       });
@@ -56,7 +56,6 @@ describe("POST /api/v1/sessions", () => {
       expect(response.status).toBe(401);
 
       const responseBody = await response.json();
-
       expect(responseBody).toEqual({
         name: "UnauthorizedError",
         message: "Senha não confere.",

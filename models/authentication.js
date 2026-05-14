@@ -3,21 +3,10 @@ import password from "models/password";
 import { UnauthorizedError, NotFoundError } from "infra/errors";
 
 async function getAuthenticateUser(providedEmail, providedPassword) {
-  try {
-    const storedUser = await findUserByEmail(providedEmail);
-    await validadePassword(providedPassword, storedUser.password);
+  const storedUser = await findUserByEmail(providedEmail);
+  await validadePassword(providedPassword, storedUser.password);
 
-    return storedUser;
-  } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      throw new UnauthorizedError({
-        message: "Dados de autenticação não conferem.",
-        action: "Verifique os dados enviados estão corretos.",
-      });
-    }
-
-    throw error;
-  }
+  return storedUser;
 
   async function findUserByEmail(providedEmail) {
     let storedUser;
@@ -26,8 +15,8 @@ async function getAuthenticateUser(providedEmail, providedPassword) {
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw new UnauthorizedError({
-          message: "Email não confere.",
-          action: "Verifique se este dado está correto.",
+          message: "Dados de autenticação não conferem.",
+          action: "Verifique os dados enviados estão corretos.",
         });
       }
       throw error;
