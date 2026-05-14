@@ -136,3 +136,7 @@ password: "cookie"
 })
 
 `
+
+- Rodar bateria de test unico pelo terminal
+  `npm test -- --testPathPattern="sessions/post"`
+  `npm test -- --testPathPattern="sessions/security"`

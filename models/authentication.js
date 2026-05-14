@@ -25,6 +25,36 @@ async function getAuthenticateUser(providedEmail, providedPassword) {
   }
 
   async function validadePassword(providedPassword, storedPassword) {
+    if (
+      typeof providedPassword !== "string" ||
+      providedPassword.trim().length === 0
+    ) {
+      throw new UnauthorizedError({
+        message: "Dados de autenticação não conferem.",
+        action: "Verifique os dados enviados estão corretos.",
+      });
+      /*
+        O if aqui faz:
+      1.Ele verifica se providedPassword é realmente texto.
+      Se não for string (por exemplo null, objeto, número, array, undefined), ele interrompe o fluxo e lança UnauthorizedError com 401.
+
+      2.Por que isso é importante
+      Sem essa checagem, a chamada de comparação de senha pode quebrar com erro interno (como já vimos: Illegal arguments), gerando 500.
+      500 é erro de servidor; nesse caso o problema é credencial inválida do cliente, então o correto é 401.
+
+      3.Benefício de segurança
+      Ele evita vazar detalhes técnicos (stack de biblioteca) e mantém resposta controlada.
+      Também ajuda a reduzir enumeração de comportamento estranho para payloads malformados.
+
+      4.Por que a mensagem é genérica nesse caso
+      Quando o tipo está inválido, faz sentido responder com Dados de autenticação não conferem.
+      Isso não confirma nada sobre usuário existente ou senha correta, então expõe menos informação.
+
+      5.Limitação atual
+      Esse if valida tipo, mas não conteúdo.
+      */
+    }
+
     const passwordMatch = await password.compare(
       providedPassword,
       storedPassword,
