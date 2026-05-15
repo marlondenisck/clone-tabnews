@@ -31,7 +31,7 @@ function onErrorHandler(error, request, response) {
   response.status(publicErrorObject.statusCode).json(publicErrorObject);
 }
 
-async function setSessionCookie(newSessionToken, response) {
+function setSessionCookie(newSessionToken, response) {
   const setCookie = cookie.serialize("session_id", newSessionToken, {
     path: "/",
     maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000, // maxAge é definido em segundos
