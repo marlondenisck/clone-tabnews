@@ -1,5 +1,5 @@
 import { createRouter } from "next-connect";
-import controller from "infra/controler";
+import controller from "infra/controller";
 
 import user from "models/user";
 import session from "models/session";
