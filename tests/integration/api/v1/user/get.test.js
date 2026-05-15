@@ -30,6 +30,12 @@ describe("GET /api/v1/user", () => {
       // Usuário com sessão ativa deve conseguir acessar o recurso.
       expect(response.status).toBe(200);
 
+      // O endpoint de usuário deve incluir headers para evitar cache, garantindo que informações sensíveis não sejam armazenadas em cache por navegadores ou proxies.
+      const cacheControl = response.headers.get("Cache-Control");
+      expect(cacheControl).toBe(
+        "no-store, no-cache, max-age=0, must-revalidate",
+      );
+
       const responseBody = await response.json();
       // O payload deve corresponder ao usuário da sessão.
       expect(responseBody).toEqual({
