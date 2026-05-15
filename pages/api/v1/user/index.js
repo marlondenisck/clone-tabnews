@@ -14,8 +14,9 @@ async function getHandler(request, response) {
   const sessionToken = request.cookies.session_id;
 
   const sessionObj = await session.findOneValidByToken(sessionToken);
-  const userFound = await user.findOneById(sessionObj.user_id);
-  console.log("userFound", userFound);
+  const renewedSession = await session.renew(sessionObj.id);
+  controller.setSessionCookie(renewedSession.token, response);
 
+  const userFound = await user.findOneById(sessionObj.user_id);
   return response.status(200).json(userFound);
 }

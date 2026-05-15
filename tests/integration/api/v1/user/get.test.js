@@ -1,4 +1,5 @@
 import { version as uuidVersion } from "uuid";
+import setCookieParser from "set-cookie-parser";
 import orchestrator from "tests/orchestrator";
 import session from "models/session";
 
@@ -44,6 +45,30 @@ describe("GET /api/v1/user", () => {
       expect(uuidVersion(createdUser.id)).toBe(4);
       expect(Date.parse(createdUser.created_at)).not.toBeNaN();
       expect(Date.parse(createdUser.updated_at)).not.toBeNaN();
+
+      // RENOVAÇÃO DE SESSÃO: O endpoint de usuário também renova a sessão, então o expires_at e updated_at devem ser atualizados para um valor futuro.
+      const renewedSessionObject = await session.findOneValidByToken(
+        sessionObj.token,
+      );
+      expect(renewedSessionObject.expires_at > sessionObj.expires_at).toEqual(
+        true,
+      );
+      expect(renewedSessionObject.updated_at > sessionObj.updated_at).toEqual(
+        true,
+      );
+
+      // Set-Cookie de renovação da data do token deve ser enviado no header da resposta.
+      const parsedSetCookie = setCookieParser(response, {
+        map: true,
+      });
+      expect(parsedSetCookie.session_id).toEqual({
+        name: "session_id",
+        value: renewedSessionObject.token,
+        maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
+        path: "/",
+        httpOnly: true,
+        sameSite: "Strict",
+      });
     });
 
     test("Quando a sessão não existe", async () => {
@@ -71,7 +96,7 @@ describe("GET /api/v1/user", () => {
       });
     });
 
-    test("Quando sessão está expirada", async () => {
+    test("Quando a sessão está expirada", async () => {
       // O teste de sessão expirada, simula um login antigo e depois tenta usar esse cookie para acessar o endpoint de usuário.
       // Congela o relógio para o passado para criar uma sessão "antiga".
       //Isso faz a criação da sessão acontecer “30 dias atrás”.
