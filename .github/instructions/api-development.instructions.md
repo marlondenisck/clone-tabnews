@@ -29,7 +29,7 @@ Ao criar um novo endpoint, sempre seguir este template:
 
 ```javascript
 import { createRouter } from "next-connect";
-import controller from "infra/controler";
+import controller from "infra/controller";
 import modelName from "models/modelName";
 
 const router = createRouter();
@@ -156,7 +156,7 @@ Usar os status codes corretos:
 
 ```javascript
 import { createRouter } from "next-connect";
-import controller from "infra/controler";
+import controller from "infra/controller";
 import post from "models/post";
 
 const router = createRouter();
@@ -256,5 +256,5 @@ Antes de fazer commit:
 - **Documentação Principal:** `documentacao.md`
 - **Testes de Exemplo:** `tests/integration/api/v1/`
 - **Modelos:** `models/`
-- **Controlador de Erros:** `infra/controler.js`
+- **Controlador de Erros:** `infra/controller.js`
 ```

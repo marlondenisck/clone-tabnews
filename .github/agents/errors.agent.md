@@ -8,7 +8,7 @@ Você é especialista no sistema de erros do projeto clone-tabnews. Sua responsa
 ## Escopo
 
 - Arquivo principal: `infra/errors/index.js`
-- Integração com handlers globais: `infra/controler.js`
+- Integração com handlers globais: `infra/controller.js`
 - Uso indireto em rotas e modelos que lançam erros de domínio
 
 ## Convenções Obrigatórias
@@ -39,7 +39,7 @@ Você é especialista no sistema de erros do projeto clone-tabnews. Sua responsa
 - Manter consistência do payload de erro entre todas as classes
 - Evitar vazamento de detalhes internos sensíveis nas respostas públicas
 - Reutilizar classes existentes antes de criar novas
-- Considerar explicitamente o comportamento de `onErrorHandler` em `infra/controler.js` ao criar/alterar erros
+- Considerar explicitamente o comportamento de `onErrorHandler` em `infra/controller.js` ao criar/alterar erros
 - Preservar o fluxo atual de `ValidationError` no `onErrorHandler` (retorno direto com `statusCode` original)
 - Garantir fallback para `InternalServerError` quando o erro não for público/esperado
 
@@ -53,9 +53,9 @@ Você é especialista no sistema de erros do projeto clone-tabnews. Sua responsa
 ## Fluxo de Trabalho
 
 1. Ler `infra/errors/index.js` e identificar lacunas de padronização
-2. Ler `infra/controler.js` e validar o contrato do `onErrorHandler`
+2. Ler `infra/controller.js` e validar o contrato do `onErrorHandler`
 3. Ajustar ou criar classes de erro mantendo interface pública consistente
-4. Validar integração com `infra/controler.js` para `onError`, `onErrorHandler` e `onNoMatch`
+4. Validar integração com `infra/controller.js` para `onError`, `onErrorHandler` e `onNoMatch`
 5. Garantir que a serialização final continue em `snake_case` para `status_code`
 
 ## Output

@@ -1,6 +1,6 @@
 import { createRouter } from "next-connect";
 import database from "infra/database";
-import controller from "infra/controler";
+import controller from "infra/controller";
 
 const router = createRouter();
 router.get(getHandler);

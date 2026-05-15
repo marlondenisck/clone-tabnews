@@ -3,7 +3,9 @@ import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
 
 const envFilePath =
-  process.env.NODE_ENV === "production" ? ".env.production" : ".env.development";
+  process.env.NODE_ENV === "production"
+    ? ".env.production"
+    : ".env.development";
 
 dotenvExpand.expand(dotenv.config({ path: envFilePath }));
 

@@ -269,7 +269,7 @@ pages/api/
 ### Componentes Principais
 
 - **Router:** Utiliza `next-connect` para roteamento
-- **Controller:** Manipulador centralizado de erros em `infra/controler`
+- **Controller:** Manipulador centralizado de erros em `infra/controller`
 - **Models:** Lógica de negócio em `models/`
   - `authentication.js`: Autenticação de sessão
   - `user.js`: Operações com usuários
