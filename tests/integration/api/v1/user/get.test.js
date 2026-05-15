@@ -96,6 +96,57 @@ describe("GET /api/v1/user", () => {
       });
     });
 
+    test("Quando a sessão foi criada há 15 dias, ela ainda é válida", async () => {
+      // Congela o relógio em 15 dias no passado para criar uma sessão mais antiga.
+      jest.useFakeTimers({
+        now: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+      });
+
+      const createdUser = await orchestrator.createUser({
+        username: "userSession15DaysOld",
+      });
+
+      const sessionObject = await orchestrator.createSession(createdUser.id);
+
+      // Volta ao tempo real para validar a sessão contra NOW() do banco.
+      jest.useRealTimers();
+
+      const response = await fetch("http://localhost:3000/api/v1/user", {
+        headers: {
+          Cookie: `session_id=${sessionObject.token}`,
+        },
+      });
+
+      // O endpoint deve renovar a sessão e devolver o Set-Cookie atualizado.
+      const renewedSessionObject = await session.findOneValidByToken(
+        sessionObject.token,
+      );
+      const parsedSetCookie = setCookieParser(response, {
+        map: true,
+      });
+      expect(parsedSetCookie.session_id).toEqual({
+        name: "session_id",
+        value: renewedSessionObject.token,
+        maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
+        path: "/",
+        httpOnly: true,
+        sameSite: "Strict",
+      });
+
+      // Como a expiração é de 30 dias, a sessão com 15 dias ainda deve autenticar.
+      expect(response.status).toBe(200);
+
+      const responseBody = await response.json();
+      expect(responseBody).toEqual({
+        id: createdUser.id,
+        username: "userSession15DaysOld",
+        email: createdUser.email,
+        password: createdUser.password,
+        created_at: createdUser.created_at.toISOString(),
+        updated_at: createdUser.updated_at.toISOString(),
+      });
+    });
+
     test("Quando a sessão está expirada", async () => {
       // O teste de sessão expirada, simula um login antigo e depois tenta usar esse cookie para acessar o endpoint de usuário.
       // Congela o relógio para o passado para criar uma sessão "antiga".
