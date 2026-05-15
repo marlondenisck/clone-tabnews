@@ -26,6 +26,25 @@ async function create(userId) {
   }
 }
 
-const session = { create, EXPIRATION_IN_MILLISECONDS };
+async function findOneValidByToken(sessionToken) {
+  const result = await database.query({
+    text: `
+      SELECT
+        *
+      FROM
+        sessions
+      WHERE
+        token = $1
+        AND expires_at > NOW()
+      LIMIT
+        1
+    `,
+    values: [sessionToken],
+  });
+
+  return result.rows[0];
+}
+
+const session = { create, findOneValidByToken, EXPIRATION_IN_MILLISECONDS };
 
 export default session;

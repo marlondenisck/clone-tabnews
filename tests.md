@@ -140,3 +140,5 @@ password: "cookie"
 - Rodar bateria de test unico pelo terminal
   `npm test -- --testPathPattern="sessions/post"`
   `npm test -- --testPathPattern="sessions/security"`
+- watch expecifico
+  `npm run test:watch -- --testPathPatterns="tests/integration/api/v1/sessions"`
