@@ -33,7 +33,7 @@ describe("Use case: Fluxo de registro de usuário", () => {
       username: "registrationflow",
       email: "registrationflow@example.com",
       password: createdUserResponseBody.password,
-      features: [],
+      features: ["read:activation_token"], // acao:objeto:modificador
       created_at: createdUserResponseBody.created_at,
       updated_at: createdUserResponseBody.updated_at,
     });
