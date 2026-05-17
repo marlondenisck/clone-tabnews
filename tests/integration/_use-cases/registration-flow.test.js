@@ -18,7 +18,7 @@ describe("Use case: Fluxo de registro de usuário", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: "registrationflow",
+          username: "RegistrationFlow",
           email: "registrationflow@example.com",
           password: "password123",
         }),
@@ -30,7 +30,7 @@ describe("Use case: Fluxo de registro de usuário", () => {
     const createdUserResponseBody = await createdUserResponse.json();
     expect(createdUserResponseBody).toEqual({
       id: createdUserResponseBody.id,
-      username: "registrationflow",
+      username: "RegistrationFlow",
       email: "registrationflow@example.com",
       password: createdUserResponseBody.password,
       features: ["read:activation_token"], // acao:objeto:modificador
@@ -43,7 +43,15 @@ describe("Use case: Fluxo de registro de usuário", () => {
     expect(Date.parse(createdUserResponseBody.updated_at)).not.toBeNaN();
   });
 
-  test("Recebe email de ativação", async () => {});
+  test("Recebe email de ativação", async () => {
+    const lastEmail = await orchestrator.getLastEmail();
+    console.log("lastEmail", lastEmail);
+
+    expect(lastEmail.sender).toBe("<contato@example.com>");
+    expect(lastEmail.recipients[0]).toBe("<registrationflow@example.com>");
+    expect(lastEmail.subject).toBe("Ative sua conta");
+    expect(lastEmail.text).toContain("RegistrationFlow");
+  });
 
   test("Ativa conta de usuário", async () => {});
 
