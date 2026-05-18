@@ -3,10 +3,12 @@ import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import authentication from "models/authentication";
 import session from "models/session";
+import userFeatures from "@/utils/userFeatures";
 
 const router = createRouter();
+router.use(controller.injectAnonymousOrUser); // middleware
 
-router.post(postHandler);
+router.post(controller.canRequest(userFeatures.CREATE_SESSION), postHandler);
 router.delete(deleteHandler);
 
 export default router.handler(controller.errorHandlers);

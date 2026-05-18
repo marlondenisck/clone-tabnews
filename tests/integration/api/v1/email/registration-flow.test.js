@@ -86,7 +86,28 @@ describe("Use case: Fluxo de registro de usuário", () => {
     expect(activatedUser.features).toEqual(["create:session"]);
   });
 
-  test("Faz login com conta ativada", async () => {});
+  test("Faz login apos a conta ativada", async () => {
+    const createSessionResponse = await fetch(
+      `${webserver.origin}/api/v1/sessions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "registrationflow@example.com",
+          password: "password123",
+        }),
+      },
+    );
+
+    expect(createSessionResponse.status).toBe(201);
+
+    const createSessionResponseBody = await createSessionResponse.json();
+    expect(createSessionResponseBody.user_id).toEqual(
+      createdUserResponseBody.id,
+    );
+  });
 
   test("Buscar usuário", async () => {});
 });

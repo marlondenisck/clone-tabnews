@@ -1,12 +1,14 @@
 import * as cookie from "cookie";
 import session from "models/session";
-
+import user from "models/user";
+import userFeatures from "@/utils/userFeatures";
 import {
   InternalServerError,
   MethodNotAllowedError,
   ValidationError,
   NotFoundError,
   UnauthorizedError,
+  ForbiddenError,
 } from "infra/errors";
 
 function onNoMatchHandler(request, response) {
@@ -15,7 +17,11 @@ function onNoMatchHandler(request, response) {
 }
 
 function onErrorHandler(error, request, response) {
-  if (error instanceof ValidationError || error instanceof NotFoundError) {
+  if (
+    error instanceof ValidationError ||
+    error instanceof NotFoundError ||
+    error instanceof ForbiddenError
+  ) {
     return response.status(error.statusCode).json(error);
   }
 
@@ -56,6 +62,58 @@ function clearSessionCookie(response) {
   response.setHeader("Set-Cookie", setCookie);
 }
 
+async function injectAnonymousOrUser(request, response, next) {
+  // 1 - se o cookie session_id existir, injeta usuario
+  if (request.cookies?.session_id) {
+    await injectAuthenticatedUser(request);
+    return next();
+  }
+
+  // 2 - se o cookie session_id nao existir, injeta anonymous
+  await injectAnonymousUser(request);
+  return next();
+}
+
+async function injectAuthenticatedUser(request) {
+  const sessionToken = request.cookies.session_id; // recupera o token da sessão a partir do cookie
+  const sessionObject = await session.findOneValidByToken(sessionToken); // busca a sessão válida no banco de dados usando o token
+  const userObject = await user.findOneById(sessionObject.user_id); // busca o usuário associado à sessão usando o user_id presente na sessão
+
+  request.context = {
+    ...request.context, // caso haja necessidade de adicionar mais propriedades no contexto futuramente, já temos a estrutura preparada
+    user: userObject, // objeto do usuário autenticado
+  };
+}
+
+async function injectAnonymousUser(request) {
+  const anonymousUserObject = {
+    features: [
+      userFeatures.READ_ACTIVATION_TOKEN,
+      userFeatures.CREATE_SESSION,
+      userFeatures.CREATE_USER,
+    ], // permissões mínimas para um usuário anônimo
+  };
+
+  request.context = {
+    ...request.context,
+    user: anonymousUserObject,
+  };
+}
+
+function canRequest(feature) {
+  return function canRequestMiddleware(request, response, next) {
+    const userTryingToRequest = request.context.user;
+    if (userTryingToRequest.features.includes(feature)) {
+      return next();
+    }
+
+    throw new ForbiddenError({
+      message: "Você nao tem permissão para executar esta ação.",
+      action: `Verifique se seu usuário possui a feature ${feature}`,
+    });
+  };
+}
+
 const controller = {
   errorHandlers: {
     onNoMatch: onNoMatchHandler,
@@ -63,6 +121,8 @@ const controller = {
   },
   setSessionCookie,
   clearSessionCookie,
+  injectAnonymousOrUser,
+  canRequest,
 };
 
 export default controller;
