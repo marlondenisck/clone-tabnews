@@ -1,9 +1,10 @@
 import email from "@/infra/email";
 import database from "@/infra/database";
 import webserver from "@/infra/webserver";
-import { NotFoundError } from "@/infra/errors";
+import { NotFoundError, ForbiddenError } from "@/infra/errors";
 
 import user from "@/models/user";
+import authorization from "./authorization";
 import userFeatures from "@/utils/userFeatures";
 
 const EXPIRATION_IN_MILLISECONDS = 60 * 15 * 1000; // 15 minutos
@@ -95,11 +96,24 @@ async function markTokenAsUsed(activationTokenId) {
   }
 }
 
-async function activatedUserByUserId(userId) {
+async function activateUserByUserId(userId) {
+  // busca o usuário relacionado ao token
+  const userToActivate = await user.findOneById(userId);
+
+  // verifica se o usuário já tem acesso ao recurso de leitura de token de ativação, ou seja, se ele já está ativo
+  if (!authorization.can(userToActivate, userFeatures.READ_ACTIVATION_TOKEN)) {
+    throw new ForbiddenError({
+      message: "Você não pode mais utilizar tokens de ativação.",
+      action: "Entre em contato com o suporte.",
+    });
+  }
+
+  // ativa o usuário adicionando as features de criação e leitura de sessão, ou seja, dando acesso ao recurso de login
   const activatedUser = await user.setFeatures(userId, [
     userFeatures.CREATE_SESSION,
     userFeatures.READ_SESSION,
   ]);
+
   return activatedUser;
 }
 
@@ -108,7 +122,8 @@ const activation = {
   create,
   findOneValidById,
   markTokenAsUsed,
-  activatedUserByUserId,
+  activateUserByUserId,
+  EXPIRATION_IN_MILLISECONDS,
 };
 
 export default activation;

@@ -1,28 +1,34 @@
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import activation from "models/activation";
+import userFeatures from "@/utils/userFeatures";
 
 const router = createRouter();
 
-router.patch(patchHandler);
+router.use(controller.injectAnonymousOrUser); // middleware
+router.patch(
+  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
+  patchHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 
 async function patchHandler(request, response) {
   // pega o token_id dos params da rota
   const activationTokenId = request.query.token_id;
+  console.log("activationTokenId", activationTokenId);
 
   // busca o token pelo id
   const validActivationToken =
     await activation.findOneValidById(activationTokenId);
 
+  // ativa o usuário relacionado ao token
+  await activation.activateUserByUserId(validActivationToken.user_id);
+
   // marca o token como usado
   const usedActivationToken = await activation.markTokenAsUsed(
     validActivationToken.id,
   );
-
-  // ativa o usuário relacionado ao token
-  await activation.activatedUserByUserId(validActivationToken.user_id);
 
   return response.status(200).json(usedActivationToken);
 }

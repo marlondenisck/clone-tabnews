@@ -142,7 +142,7 @@ async function patchHandler(request, response) {
     );
 
     // Ativa o usuário relacionado ao token
-    await activation.activatedUserByUserId(validActivationToken.user_id);
+    await activation.activateUserByUserId(validActivationToken.user_id);
 
     return usedToken;
   });

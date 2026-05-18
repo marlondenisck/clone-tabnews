@@ -6,8 +6,8 @@ const READ_SESSION = "read:session";
 const userFeatures = {
   READ_ACTIVATION_TOKEN,
   CREATE_SESSION,
-  CREATE_USER,
   READ_SESSION,
+  CREATE_USER,
 };
 
 export default userFeatures;
