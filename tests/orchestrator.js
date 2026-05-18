@@ -6,6 +6,7 @@ import database from "infra/database";
 import migrator from "models/migrator";
 import user from "models/user";
 import session from "models/session";
+import activation from "models/activation";
 
 const emailHttpURL = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
 
@@ -66,6 +67,10 @@ async function createSession(userId) {
   return session.create(userId);
 }
 
+async function activateUser(inactiveUser) {
+  return await activation.activatedUserByUserId(inactiveUser.id);
+}
+
 async function deleteAllEmails() {
   await fetch(`${emailHttpURL}/messages`, {
     method: "DELETE",
@@ -101,6 +106,7 @@ const orchestrator = {
   runPendingMigrations,
   createUser,
   createSession,
+  activateUser,
   deleteAllEmails,
   getLastEmail,
   extractUUID,

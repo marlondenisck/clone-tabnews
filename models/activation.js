@@ -2,7 +2,9 @@ import email from "@/infra/email";
 import database from "@/infra/database";
 import webserver from "@/infra/webserver";
 import { NotFoundError } from "@/infra/errors";
+
 import user from "@/models/user";
+import userFeatures from "@/utils/userFeatures";
 
 const EXPIRATION_IN_MILLISECONDS = 60 * 15 * 1000; // 15 minutos
 
@@ -94,7 +96,9 @@ async function markTokenAsUsed(activationTokenId) {
 }
 
 async function activatedUserByUserId(userId) {
-  const activatedUser = await user.setFeatures(userId, ["create:session"]);
+  const activatedUser = await user.setFeatures(userId, [
+    userFeatures.CREATE_SESSION,
+  ]);
   return activatedUser;
 }
 

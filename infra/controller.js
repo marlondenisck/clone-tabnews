@@ -1,7 +1,9 @@
 import * as cookie from "cookie";
 import session from "models/session";
+
 import user from "models/user";
-import userFeatures from "@/utils/userFeatures";
+import authorization from "@/models/authorization";
+
 import {
   InternalServerError,
   MethodNotAllowedError,
@@ -10,6 +12,7 @@ import {
   UnauthorizedError,
   ForbiddenError,
 } from "infra/errors";
+import userFeatures from "@/utils/userFeatures";
 
 function onNoMatchHandler(request, response) {
   const publicErrorObject = new MethodNotAllowedError();
@@ -103,7 +106,8 @@ async function injectAnonymousUser(request) {
 function canRequest(feature) {
   return function canRequestMiddleware(request, response, next) {
     const userTryingToRequest = request.context.user;
-    if (userTryingToRequest.features.includes(feature)) {
+
+    if (authorization.can(userTryingToRequest, feature)) {
       return next();
     }
 
