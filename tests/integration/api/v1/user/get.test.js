@@ -10,6 +10,23 @@ beforeAll(async () => {
 });
 
 describe("GET /api/v1/user", () => {
+  describe("Anonymous user", () => {
+    test("Deve retornar 403 ao acessar o enpoint", async () => {
+      const response = await fetch("http://localhost:3000/api/v1/user");
+
+      expect(response.status).toBe(403);
+
+      const responseBody = await response.json();
+
+      expect(responseBody).toEqual({
+        name: "ForbiddenError",
+        message: "Você nao tem permissão para executar esta ação.",
+        action: "Verifique se seu usuário possui a feature read:session",
+        status_code: 403,
+      });
+    });
+  });
+
   describe("Default user", () => {
     test("Quando a sessão é válida", async () => {
       // Cria um usuário persistido para ser retornado pelo endpoint autenticado.
@@ -17,6 +34,8 @@ describe("GET /api/v1/user", () => {
         username: "userValidSession",
       });
 
+      // Ativa o usuário para garantir que ele tenha as features necessárias para acessar o endpoint de usuário (como read:activation_token, que é requisito para criar sessão e acessar o endpoint de usuário).
+      const activatedUser = await orchestrator.activateUser(createdUser);
       // Cria uma sessão válida para o usuário, gerando um token de autenticação.
       const sessionObj = await orchestrator.createSession(createdUser.id);
 
@@ -43,9 +62,9 @@ describe("GET /api/v1/user", () => {
         username: "userValidSession",
         email: createdUser.email,
         password: createdUser.password,
-        features: ["read:activation_token"],
+        features: ["create:session", "read:session"],
         created_at: createdUser.created_at.toISOString(),
-        updated_at: createdUser.updated_at.toISOString(),
+        updated_at: activatedUser.updated_at.toISOString(),
       });
 
       // Sanidade dos campos de identificação e data.
@@ -122,11 +141,11 @@ describe("GET /api/v1/user", () => {
       jest.useFakeTimers({
         now: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
       });
-
       const createdUser = await orchestrator.createUser({
         username: "userSession15DaysOld",
       });
 
+      const activatedUser = await orchestrator.activateUser(createdUser);
       const sessionObject = await orchestrator.createSession(createdUser.id);
 
       // Volta ao tempo real para validar a sessão contra NOW() do banco.
@@ -163,9 +182,9 @@ describe("GET /api/v1/user", () => {
         username: "userSession15DaysOld",
         email: createdUser.email,
         password: createdUser.password,
-        features: ["read:activation_token"],
+        features: ["create:session", "read:session"],
         created_at: createdUser.created_at.toISOString(),
-        updated_at: createdUser.updated_at.toISOString(),
+        updated_at: activatedUser.updated_at.toISOString(),
       });
     });
 

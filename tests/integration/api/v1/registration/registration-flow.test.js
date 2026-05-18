@@ -83,9 +83,10 @@ describe("Use case: Fluxo de registro de usuário", () => {
     expect(Date.parse(activationResponseBody.used_at)).not.toBeNaN();
 
     const activatedUser = await user.findOneByUsername("RegistrationFlow");
-    expect(activatedUser.features).toEqual(["create:session"]);
+    expect(activatedUser.features).toEqual(["create:session", "read:session"]);
   });
 
+  let createSessionResponseBody;
   test("Faz login apos a conta ativada", async () => {
     const createSessionResponse = await fetch(
       `${webserver.origin}/api/v1/sessions`,
@@ -103,11 +104,21 @@ describe("Use case: Fluxo de registro de usuário", () => {
 
     expect(createSessionResponse.status).toBe(201);
 
-    const createSessionResponseBody = await createSessionResponse.json();
+    createSessionResponseBody = await createSessionResponse.json();
     expect(createSessionResponseBody.user_id).toEqual(
       createdUserResponseBody.id,
     );
   });
 
-  test("Buscar usuário", async () => {});
+  test("Buscar usuário", async () => {
+    const userResponse = await fetch(`${webserver.origin}/api/v1/user`, {
+      headers: {
+        cookie: `session_id=${createSessionResponseBody.token}`,
+      },
+    });
+
+    const userResponseBody = await userResponse.json();
+    expect(userResponse.status).toBe(200);
+    expect(userResponseBody.id).toBe(createdUserResponseBody.id);
+  });
 });
