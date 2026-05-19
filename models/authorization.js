@@ -13,7 +13,8 @@ function can(user, feature, resource) {
     authorized = false; // redefine a autorização para false, pois precisamos verificar o recurso
 
     // Verifica se o usuário é o mesmo que está tentando ser atualizado
-    if (user.id === resource.id) {
+    // Se for o mesmo usuário, ele pode atualizar seu próprio recurso. Caso contrário, ele precisa da permissão "update:user:others".
+    if (user.id === resource.id || can(user, "update:user:others")) {
       authorized = true; // o usuário pode atualizar seu próprio recurso
     }
   }
