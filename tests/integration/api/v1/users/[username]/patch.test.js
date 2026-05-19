@@ -2,6 +2,7 @@ import { version as uuidVersion } from "uuid";
 import orchestrator from "tests/orchestrator";
 import user from "models/user";
 import password from "models/password";
+import webserver from "@/infra/webserver";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
@@ -13,7 +14,7 @@ describe("PATCH /api/v1/users/[username]", () => {
   describe("Anonymous user", () => {
     test("impedir atualizar um username nao existente", async () => {
       const response = await fetch(
-        "http://localhost:3000/api/v1/users/usuarioinexistente",
+        `${webserver.origin}/api/v1/users/usuarioinexistente`,
         {
           method: "PATCH",
         },
@@ -39,7 +40,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         email: "user2@example.com",
       });
 
-      const response = await fetch(`http://localhost:3000/api/v1/users/user2`, {
+      const response = await fetch(`${webserver.origin}/api/v1/users/user2`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -70,7 +71,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       });
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/users/${user2.username}`,
+        `${webserver.origin}/api/v1/users/${user2.username}`,
         {
           method: "PATCH",
           headers: {
@@ -99,7 +100,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       });
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/users/${uniqueUser.username}`,
+        `${webserver.origin}/api/v1/users/${uniqueUser.username}`,
         {
           method: "PATCH",
           headers: {
@@ -136,7 +137,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       });
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/users/${uniqueUserResponse.username}`,
+        `${webserver.origin}/api/v1/users/${uniqueUserResponse.username}`,
         {
           method: "PATCH",
           headers: {
@@ -173,7 +174,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       });
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/users/${passwordUserResponse.username}`,
+        `${webserver.origin}/api/v1/users/${passwordUserResponse.username}`,
         {
           method: "PATCH",
           headers: {

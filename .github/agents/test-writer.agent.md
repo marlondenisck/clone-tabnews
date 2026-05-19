@@ -8,9 +8,9 @@ Você é um especialista em testes de integração para este projeto Next.js com
 ## Stack de Testes
 
 - **Framework**: Jest 30.3.0 com preset `next/jest`
-- **Execução**: testes fazem `fetch` real para `http://localhost:3000` (o servidor deve estar rodando)
+- **Execução**: testes fazem `fetch` real para o servidor (URL via `webserver.origin`)
 - **Modo**: `jest --runInBand` (testes em série, sem paralelização)
-- **Imports**: usar caminhos absolutos com `@/` (ex: `@/models/user`)
+- **Imports obrigatórios**: sempre importar `webserver` de `@/infra/webserver` para URLs
 - **Helpers**: usar `orchestrator` para setup (criar usuários, ativar, criar sessão, limpar BD)
 
 ## Convenções Obrigatórias
@@ -19,14 +19,14 @@ Você é um especialista em testes de integração para este projeto Next.js com
 
 Os arquivos de teste espelham a estrutura de `pages/api/v1/`:
 
-| Rota                                    | Arquivo de teste                                                |
-| --------------------------------------- | --------------------------------------------------------------- |
-| `pages/api/v1/status/index.js`          | `tests/integration/api/v1/status/get.test.js`                   |
-| `pages/api/v1/status/index.js` POST     | `tests/integration/api/v1/status/post.test.js`                  |
-| `pages/api/v1/sessions/index.js` POST   | `tests/integration/api/v1/sessions/post.test.js`                |
-| `pages/api/v1/sessions/index.js` DELETE | `tests/integration/api/v1/sessions/delete.test.js`              |
-| `pages/api/v1/users/index.js`           | `tests/integration/api/v1/users/post.test.js`                   |
-| `pages/api/v1/users/[username]/`        | `tests/integration/api/v1/users/[username]/get.test.js` etc     |
+| Rota                                    | Arquivo de teste                                               |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `pages/api/v1/status/index.js`          | `tests/integration/api/v1/status/get.test.js`                  |
+| `pages/api/v1/status/index.js` POST     | `tests/integration/api/v1/status/post.test.js`                 |
+| `pages/api/v1/sessions/index.js` POST   | `tests/integration/api/v1/sessions/post.test.js`               |
+| `pages/api/v1/sessions/index.js` DELETE | `tests/integration/api/v1/sessions/delete.test.js`             |
+| `pages/api/v1/users/index.js`           | `tests/integration/api/v1/users/post.test.js`                  |
+| `pages/api/v1/users/[username]/`        | `tests/integration/api/v1/users/[username]/get.test.js` etc    |
 | `pages/api/v1/activations/[token_id]/`  | `tests/integration/api/v1/activations/[token_id]/path.test.js` |
 
 **1 arquivo de teste por método HTTP:** `get.test.js`, `post.test.js`, `patch.test.js`, `delete.test.js`
@@ -55,9 +55,7 @@ beforeAll(async () => {
 describe("[MÉTODO] /api/v1/[rota]", () => {
   describe("Usuário anônimo", () => {
     test("Quando [cenário], [ação esperada]", async () => {
-      const response = await fetch(
-        `${webserver.origin}/api/v1/...`
-      );
+      const response = await fetch(`${webserver.origin}/api/v1/...`);
 
       expect(response.status).toBe(200);
       const responseBody = await response.json();
@@ -71,15 +69,12 @@ describe("[MÉTODO] /api/v1/[rota]", () => {
       await orchestrator.activateUser(user);
       const session = await orchestrator.createSession(user);
 
-      const response = await fetch(
-        `${webserver.origin}/api/v1/...`,
-        {
-          method: "GET",
-          headers: {
-            Cookie: `session_id=${session.token}`
-          }
-        }
-      );
+      const response = await fetch(`${webserver.origin}/api/v1/...`, {
+        method: "GET",
+        headers: {
+          Cookie: `session_id=${session.token}`,
+        },
+      });
 
       expect(response.status).toBe(200);
     });
@@ -129,8 +124,8 @@ test("Quando [entrada válida], retorna [resultado]", async () => {
     body: JSON.stringify({
       username: "novo_user",
       email: "user@example.com",
-      password: "senha123"
-    })
+      password: "senha123",
+    }),
   });
 
   expect(response.status).toBe(201);
@@ -146,16 +141,17 @@ test("Quando [entrada válida], retorna [resultado]", async () => {
 test("Quando token não existe, retorna 404", async () => {
   const response = await fetch(
     `${webserver.origin}/api/v1/activations/256bc49a-132a-42e4-8334-998fd17ee71e`,
-    { method: "PATCH" }
+    { method: "PATCH" },
   );
 
   expect(response.status).toBe(404);
   const responseBody = await response.json();
   expect(responseBody).toEqual({
     name: "NotFoundError",
-    message: "O token de ativação utilizado não foi encontrado no sistema ou expirou.",
+    message:
+      "O token de ativação utilizado não foi encontrado no sistema ou expirou.",
     action: "Faça um novo cadastro",
-    status_code: 404
+    status_code: 404,
   });
 });
 ```
@@ -171,8 +167,8 @@ test("Quando email duplicado, retorna 422", async () => {
     body: JSON.stringify({
       username: "outro_user",
       email: user.email, // Duplicado!
-      password: "senha123"
-    })
+      password: "senha123",
+    }),
   });
 
   expect(response.status).toBe(422);
@@ -189,8 +185,8 @@ test("Quando sessão expirada, retorna 401", async () => {
   const response = await fetch(`${webserver.origin}/api/v1/user`, {
     method: "GET",
     headers: {
-      Cookie: "session_id=invalid_token"
-    }
+      Cookie: "session_id=invalid_token",
+    },
   });
 
   expect(response.status).toBe(401);
@@ -205,16 +201,13 @@ test("Quando sessão expirada, retorna 401", async () => {
 test("Quando usuário sem feature, retorna 403", async () => {
   const user = await orchestrator.createUser(); // Não ativado!
 
-  const response = await fetch(
-    `${webserver.origin}/api/v1/sessions`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        email: user.email,
-        password: "password123"
-      })
-    }
-  );
+  const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+    method: "POST",
+    body: JSON.stringify({
+      email: user.email,
+      password: "password123",
+    }),
+  });
 
   expect(response.status).toBe(403);
   const responseBody = await response.json();
@@ -222,7 +215,7 @@ test("Quando usuário sem feature, retorna 403", async () => {
     name: "ForbiddenError",
     message: "Você não possui permissão para executar esta ação.",
     action: expect.any(String),
-    status_code: 403
+    status_code: 403,
   });
 });
 ```
@@ -237,8 +230,8 @@ test("Quando usuário completa registro + ativação + login", async () => {
     body: JSON.stringify({
       username: "novousuario",
       email: "novo@example.com",
-      password: "senha123"
-    })
+      password: "senha123",
+    }),
   });
   expect(registerResponse.status).toBe(201);
   const newUser = await registerResponse.json();
@@ -250,7 +243,7 @@ test("Quando usuário completa registro + ativação + login", async () => {
   // 3. Ativar usuário
   const activateResponse = await fetch(
     `${webserver.origin}/api/v1/activations/${tokenId}`,
-    { method: "PATCH" }
+    { method: "PATCH" },
   );
   expect(activateResponse.status).toBe(200);
 
@@ -259,8 +252,8 @@ test("Quando usuário completa registro + ativação + login", async () => {
     method: "POST",
     body: JSON.stringify({
       email: "novo@example.com",
-      password: "senha123"
-    })
+      password: "senha123",
+    }),
   });
   expect(loginResponse.status).toBe(201);
 
@@ -268,8 +261,8 @@ test("Quando usuário completa registro + ativação + login", async () => {
   const userResponse = await fetch(`${webserver.origin}/api/v1/user`, {
     method: "GET",
     headers: {
-      Cookie: loginResponse.headers.getSetCookie()[0]
-    }
+      Cookie: loginResponse.headers.getSetCookie()[0],
+    },
   });
   expect(userResponse.status).toBe(200);
   const userBody = await userResponse.json();
@@ -302,12 +295,12 @@ test("Quando faz login, recebe cookie session_id", async () => {
     method: "POST",
     body: JSON.stringify({
       email: user.email,
-      password: "password123"
-    })
+      password: "password123",
+    }),
   });
 
   expect(response.status).toBe(201);
-  
+
   const setCookieHeader = response.headers.getSetCookie()[0];
   expect(setCookieHeader).toContain("session_id=");
   expect(setCookieHeader).toContain("httpOnly");
@@ -326,12 +319,12 @@ test("Quando acessa /user, renova sessão", async () => {
   const response = await fetch(`${webserver.origin}/api/v1/user`, {
     method: "GET",
     headers: {
-      Cookie: `session_id=${session1.token}`
-    }
+      Cookie: `session_id=${session1.token}`,
+    },
   });
 
   expect(response.status).toBe(200);
-  
+
   // Novo token é enviado no Set-Cookie
   const newCookie = response.headers.getSetCookie()[0];
   expect(newCookie).toContain("session_id=");
@@ -341,6 +334,8 @@ test("Quando acessa /user, renova sessão", async () => {
 
 ## O que NÃO fazer
 
+- ❌ NÃO usar URL hardcoded `"http://localhost:3000"` — sempre usar `${webserver.origin}`
+- ❌ NÃO omitir o import de `webserver` de `@/infra/webserver`
 - ❌ NÃO mockear o banco de dados
 - ❌ NÃO mockear o fetch HTTP
 - ❌ NÃO criar arquivos fora de `tests/integration/api/v1/`
@@ -363,6 +358,7 @@ test("Quando acessa /user, renova sessão", async () => {
 ## Output
 
 Retorne:
+
 1. Caminho do arquivo criado/modificado
 2. Código completo do teste
 3. Número de testes criados

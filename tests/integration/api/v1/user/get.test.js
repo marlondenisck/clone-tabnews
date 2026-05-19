@@ -2,6 +2,7 @@ import { version as uuidVersion } from "uuid";
 import setCookieParser from "set-cookie-parser";
 import orchestrator from "tests/orchestrator";
 import session from "models/session";
+import webserver from "@/infra/webserver";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
@@ -12,7 +13,7 @@ beforeAll(async () => {
 describe("GET /api/v1/user", () => {
   describe("Anonymous user", () => {
     test("Deve retornar 403 ao acessar o enpoint", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/user");
+      const response = await fetch(`${webserver.origin}/api/v1/user`);
 
       expect(response.status).toBe(403);
 
@@ -37,10 +38,10 @@ describe("GET /api/v1/user", () => {
       // Ativa o usuário para garantir que ele tenha as features necessárias para acessar o endpoint de usuário (como read:activation_token, que é requisito para criar sessão e acessar o endpoint de usuário).
       const activatedUser = await orchestrator.activateUser(createdUser);
       // Cria uma sessão válida para o usuário, gerando um token de autenticação.
-      const sessionObj = await orchestrator.createSession(createdUser.id);
+      const sessionObj = await orchestrator.createSession(createdUser);
 
       // Envia o cookie session_id para simular um usuário já autenticado.
-      const response = await fetch("http://localhost:3000/api/v1/user", {
+      const response = await fetch(`${webserver.origin}/api/v1/user`, {
         headers: {
           Cookie: `session_id=${sessionObj.token}`,
         },
@@ -104,7 +105,7 @@ describe("GET /api/v1/user", () => {
 
       const fakeToken =
         "57aa1924f252665e09ba3b8b455857be575157baf018a9b05e9171b437a6d5fdb36162607a47f5fa66edf577fc729c6b";
-      const response = await fetch("http://localhost:3000/api/v1/user", {
+      const response = await fetch(`${webserver.origin}/api/v1/user`, {
         headers: {
           Cookie: `session_id=${fakeToken}`,
         },
@@ -146,12 +147,12 @@ describe("GET /api/v1/user", () => {
       });
 
       const activatedUser = await orchestrator.activateUser(createdUser);
-      const sessionObject = await orchestrator.createSession(createdUser.id);
+      const sessionObject = await orchestrator.createSession(createdUser);
 
       // Volta ao tempo real para validar a sessão contra NOW() do banco.
       jest.useRealTimers();
 
-      const response = await fetch("http://localhost:3000/api/v1/user", {
+      const response = await fetch(`${webserver.origin}/api/v1/user`, {
         headers: {
           Cookie: `session_id=${sessionObject.token}`,
         },
@@ -203,7 +204,7 @@ describe("GET /api/v1/user", () => {
         username: "UserWithExpiredSession",
       });
 
-      const sessionObject = await orchestrator.createSession(createdUser.id);
+      const sessionObject = await orchestrator.createSession(createdUser);
 
       // Retorna ao relógio real para validar expiração contra o horário atual do banco.
       jest.useRealTimers();
@@ -211,7 +212,7 @@ describe("GET /api/v1/user", () => {
       // console.log("Data real:", new Date().toISOString());
 
       // Reutiliza o token antigo; a sessão deve ser considerada inválida/expirada.
-      const response = await fetch("http://localhost:3000/api/v1/user", {
+      const response = await fetch(`${webserver.origin}/api/v1/user`, {
         headers: {
           Cookie: `session_id=${sessionObject.token}`,
         },

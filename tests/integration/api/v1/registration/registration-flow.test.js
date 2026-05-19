@@ -17,7 +17,7 @@ describe("Use case: Fluxo de registro de usuário", () => {
 
   test("Cria conta de usuario", async () => {
     const createdUserResponse = await fetch(
-      "http://localhost:3000/api/v1/users",
+      `${webserver.origin}/api/v1/users`,
       {
         method: "POST",
         headers: {

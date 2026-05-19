@@ -1,4 +1,5 @@
 import orchestrator from "tests/orchestrator";
+import webserver from "@/infra/webserver";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
@@ -8,7 +9,7 @@ beforeAll(async () => {
 describe("POST /api/v1/migrations", () => {
   describe("Anonymous user", () => {
     test("Rodar migrations pendentes", async () => {
-      const response1 = await fetch("http://localhost:3000/api/v1/migrations", {
+      const response1 = await fetch(`${webserver.origin}/api/v1/migrations`, {
         method: "POST",
       });
 
@@ -33,7 +34,7 @@ describe("POST /api/v1/migrations", () => {
       });
     });
     test("Não deve rodar migrations novamente se já estiverem rodadas", async () => {
-      const response2 = await fetch("http://localhost:3000/api/v1/migrations", {
+      const response2 = await fetch(`${webserver.origin}/api/v1/migrations`, {
         method: "POST",
       });
 

@@ -13,7 +13,7 @@ beforeAll(async () => {
 describe("POST /api/v1/users", () => {
   describe("Anonymous user", () => {
     test("Rodar user único pela primeira vez", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/users", {
+      const response = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,7 +59,7 @@ describe("POST /api/v1/users", () => {
 
     test("Impedir Email Duplicado", async () => {
       async function runFetch(params) {
-        return await fetch("http://localhost:3000/api/v1/users", {
+        return await fetch(`${webserver.origin}/api/v1/users`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -97,7 +97,7 @@ describe("POST /api/v1/users", () => {
 
     test("Impedir username Duplicado", async () => {
       async function runFetch(params) {
-        return await fetch("http://localhost:3000/api/v1/users", {
+        return await fetch(`${webserver.origin}/api/v1/users`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
