@@ -1,11 +1,12 @@
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import user from "models/user";
+import userFeatures from "@/utils/userFeatures";
 
 const router = createRouter();
-
+router.use(controller.injectAnonymousOrUser);
 router.get(getHandler);
-router.patch(patchHandler);
+router.patch(controller.canRequest(userFeatures.UPDATE_USER), patchHandler);
 
 export default router.handler(controller.errorHandlers);
 
