@@ -14,7 +14,7 @@ function can(user, feature, resource) {
 
     // Verifica se o usuário é o mesmo que está tentando ser atualizado
     // Se for o mesmo usuário, ele pode atualizar seu próprio recurso. Caso contrário, ele precisa da permissão "update:user:others".
-    if (user.id === resource.id || can(user, "update:user:others")) {
+    if (user.id === resource.id || can(user, userFeatures.UPDATE_USER_OTHERS)) {
       authorized = true; // o usuário pode atualizar seu próprio recurso
     }
   }
@@ -22,8 +22,21 @@ function can(user, feature, resource) {
   return authorized; // retorna true se o usuário for autorizado, ou false caso contrário
 }
 
+function filterOutput(user, feature, output) {
+  if (feature === userFeatures.READ_USER) {
+    return {
+      id: output.id,
+      username: output.username,
+      features: output.features,
+      created_at: output.created_at,
+      updated_at: output.updated_at,
+    };
+  }
+}
+
 const authorization = {
   can,
+  filterOutput,
 };
 
 export default authorization;

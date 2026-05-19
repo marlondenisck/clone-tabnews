@@ -13,8 +13,6 @@ describe("GET /api/v1/users/[username]", () => {
     test("Busca pelo username exato", async () => {
       await orchestrator.createUser({
         username: "MesmoCaseUser",
-        email: "mesmo.case@example.com",
-        password: "password123",
       });
 
       const response2 = await fetch(
@@ -26,8 +24,6 @@ describe("GET /api/v1/users/[username]", () => {
       expect(response2Body).toEqual({
         id: response2Body.id,
         username: "MesmoCaseUser",
-        email: "mesmo.case@example.com",
-        password: response2Body.password,
         features: ["read:activation_token"],
         created_at: response2Body.created_at,
         updated_at: response2Body.updated_at,
@@ -41,8 +37,6 @@ describe("GET /api/v1/users/[username]", () => {
     test("Busca pelo username escrito diferente", async () => {
       await orchestrator.createUser({
         username: "caseDiferenteUser",
-        email: "case.diferente@example.com",
-        password: "password123",
       });
 
       const response2 = await fetch(
@@ -50,12 +44,11 @@ describe("GET /api/v1/users/[username]", () => {
       );
 
       expect(response2.status).toBe(200);
+
       const response2Body = await response2.json();
       expect(response2Body).toEqual({
         id: response2Body.id,
         username: "caseDiferenteUser",
-        email: "case.diferente@example.com",
-        password: response2Body.password,
         features: ["read:activation_token"],
         created_at: response2Body.created_at,
         updated_at: response2Body.updated_at,
