@@ -29,7 +29,7 @@ async function getHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToGet, // usuário que está tentando acessar
-    availableFeatures.READ_USER, // feature necessária para ler os dados do usuário
+    availableFeatures.READ_USER_SELF, // feature necessária para ler os dados do usuário
     userFound, // recurso encontrado que será filtrado
   );
 

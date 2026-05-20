@@ -28,7 +28,7 @@ async function postHandler(request, response) {
   // 3- filtrar os campos de saída com base na feature do usuário
   const secureOutputValues = authorization.filterOutput(
     userTryingToPost, // usuário que está tentando criar
-    availableFeatures.READ_USER_SELF, // quando user usa recurso pra si próprio
+    availableFeatures.READ_USER, // quando user usa recurso
     newUser, // recurso criado que será filtrado
   );
 

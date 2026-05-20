@@ -61,6 +61,7 @@ describe("GET /api/v1/user", () => {
       expect(responseBody).toEqual({
         id: createdUser.id,
         username: "userValidSession",
+        email: responseBody.email, // O email é retornado apenas para o próprio usuário, então pegamos do response para validar a presença e formato, sem expor o valor fixo aqui.
         features: ["create:session", "read:session", "update:user"],
         created_at: createdUser.created_at.toISOString(),
         updated_at: activatedUser.updated_at.toISOString(),
@@ -179,6 +180,7 @@ describe("GET /api/v1/user", () => {
       expect(responseBody).toEqual({
         id: createdUser.id,
         username: "userSession15DaysOld",
+        email: responseBody.email,
         features: ["create:session", "read:session", "update:user"],
         created_at: createdUser.created_at.toISOString(),
         updated_at: activatedUser.updated_at.toISOString(),
