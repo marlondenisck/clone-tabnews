@@ -45,5 +45,13 @@ async function patchHandler(request, response) {
   }
 
   const updatedUser = await user.update(username, userInputValues);
-  return response.status(200).json(updatedUser);
+
+  // filtrar os campos de saída com base na feature do usuário
+  const secureOutputValues = authorization.filterOutput(
+    userTryingToPatch, // usuário que está tentando atualizar
+    userFeatures.READ_USER, // feature necessária para ler os dados do usuário
+    updatedUser, // recurso atualizado que será filtrado
+  );
+
+  return response.status(200).json(secureOutputValues);
 }

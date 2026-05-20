@@ -22,14 +22,52 @@ function can(user, feature, resource) {
   return authorized; // retorna true se o usuário for autorizado, ou false caso contrário
 }
 
-function filterOutput(user, feature, output) {
+// função para filtrar os campos de saída com base na feature do usuário
+function filterOutput(user, feature, resource) {
   if (feature === userFeatures.READ_USER) {
     return {
-      id: output.id,
-      username: output.username,
-      features: output.features,
-      created_at: output.created_at,
-      updated_at: output.updated_at,
+      id: resource.id,
+      username: resource.username,
+      features: resource.features,
+      created_at: resource.created_at,
+      updated_at: resource.updated_at,
+    };
+  }
+
+  if (feature === userFeatures.READ_USER_SELF) {
+    if (user.id === resource.id) {
+      return {
+        id: resource.id,
+        username: resource.username,
+        email: resource.email,
+        features: resource.features,
+        created_at: resource.created_at,
+        updated_at: resource.updated_at,
+      };
+    }
+  }
+
+  if (feature === userFeatures.READ_SESSION) {
+    if (user.id === resource.user_id) {
+      return {
+        id: resource.id,
+        token: resource.token,
+        user_id: resource.user_id,
+        created_at: resource.created_at,
+        updated_at: resource.updated_at,
+        expires_at: resource.expires_at,
+      };
+    }
+  }
+
+  if (feature === userFeatures.READ_ACTIVATION_TOKEN) {
+    return {
+      id: resource.id,
+      user_id: resource.user_id,
+      created_at: resource.created_at,
+      updated_at: resource.updated_at,
+      expires_at: resource.expires_at,
+      used_at: resource.used_at,
     };
   }
 }

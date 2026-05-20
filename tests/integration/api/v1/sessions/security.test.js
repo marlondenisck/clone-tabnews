@@ -8,7 +8,7 @@ beforeEach(async () => {
   await orchestrator.runPendingMigrations();
 });
 
-describe("POST /api/v1/sessions - Segurança", () => {
+describe("Segurança", () => {
   describe("Tentativas de SQL Injection", () => {
     test("Email com SQL injection básico: admin'--", async () => {
       await orchestrator.createUser({
@@ -850,6 +850,50 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
   });
 
+  describe("Object/Prototype Pollution", () => {
+    test("Não permite poluição de objeto via __proto__ no payload", async () => {
+      // Garante que o protótipo está limpo antes do teste
+      expect({}.polluted).toBeUndefined();
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+          __proto__: { polluted: "yes" },
+        }),
+      });
+
+      // O endpoint deve responder normalmente (provavelmente 401, pois o usuário não existe)
+      expect([400, 401, 403, 404]).toContain(response.status);
+
+      // O protótipo global não deve ser poluído
+      expect({}.polluted).toBeUndefined();
+    });
+
+    test("Não permite poluição de objeto via constructor no payload", async () => {
+      expect({}.polluted).toBeUndefined();
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+          constructor: { prototype: { polluted: "yes" } },
+        }),
+      });
+
+      expect([400, 401, 403, 404]).toContain(response.status);
+      expect({}.polluted).toBeUndefined();
+    });
+  });
+
   describe("Proteção contra response manipulation", () => {
     test("Resposta de erro não contém informações sensíveis", async () => {
       const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
@@ -983,49 +1027,21 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
   });
 
-  // Testes de Object/Prototype Pollution
+  describe("/status", () => {
+    test("Teste de SQL Injection", async () => {
+      const response1 = await fetch(
+        `${webserver.origin}/api/v1/status?datname='tabnews';`,
+      );
+      const response2 = await fetch(
+        `${webserver.origin}/api/v1/status?datname=';`,
+      );
+      const response3 = await fetch(
+        `${webserver.origin}/api/v1/status?datname='; SELECT pg_sleep(4); --`,
+      );
 
-  describe("Object/Prototype Pollution", () => {
-    test("Não permite poluição de objeto via __proto__ no payload", async () => {
-      // Garante que o protótipo está limpo antes do teste
-      expect({}.polluted).toBeUndefined();
-
-      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "user@example.com",
-          password: "senha123",
-          __proto__: { polluted: "yes" },
-        }),
-      });
-
-      // O endpoint deve responder normalmente (provavelmente 401, pois o usuário não existe)
-      expect([400, 401, 403, 404]).toContain(response.status);
-
-      // O protótipo global não deve ser poluído
-      expect({}.polluted).toBeUndefined();
-    });
-
-    test("Não permite poluição de objeto via constructor no payload", async () => {
-      expect({}.polluted).toBeUndefined();
-
-      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: "user@example.com",
-          password: "senha123",
-          constructor: { prototype: { polluted: "yes" } },
-        }),
-      });
-
-      expect([400, 401, 403, 404]).toContain(response.status);
-      expect({}.polluted).toBeUndefined();
+      expect(response1.status).toBe(200);
+      expect(response2.status).toBe(200);
+      expect(response3.status).toBe(200);
     });
   });
 });

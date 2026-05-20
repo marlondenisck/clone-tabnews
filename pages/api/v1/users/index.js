@@ -1,7 +1,10 @@
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
+
 import user from "models/user";
 import activation from "models/activation";
+import authorization from "@/models/authorization";
+
 import userFeatures from "@/utils/userFeatures";
 
 const router = createRouter();
@@ -11,7 +14,9 @@ router.post(controller.canRequest(userFeatures.CREATE_USER), postHandler);
 export default router.handler(controller.errorHandlers);
 
 async function postHandler(request, response) {
+  const userTryingToPost = request.context.user;
   const userInputValues = request.body;
+
   const newUser = await user.create(userInputValues);
 
   // 1- criar token de ativação
@@ -20,5 +25,12 @@ async function postHandler(request, response) {
   // 2- enviar email com token de ativação
   await activation.sendEmailToUser(newUser, activationToken);
 
-  return response.status(201).json(newUser);
+  // 3- filtrar os campos de saída com base na feature do usuário
+  const secureOutputValues = authorization.filterOutput(
+    userTryingToPost, // usuário que está tentando criar
+    userFeatures.READ_USER_SELF, // quando user usa recurso pra si próprio
+    newUser, // recurso criado que será filtrado
+  );
+
+  return response.status(201).json(secureOutputValues);
 }

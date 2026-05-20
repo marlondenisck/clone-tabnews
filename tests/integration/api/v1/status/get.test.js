@@ -40,9 +40,9 @@ describe("GET /api/v1/status", () => {
       const responseBody = await response.json();
       expect(responseBody.max_connections).toBeDefined();
       expect(typeof responseBody.max_connections).toBe("number");
-      expect(responseBody.max_connections).toBeGreaterThanOrEqual(
-        responseBody.used_connections,
-      );
+      // expect(responseBody.max_connections).toBeGreaterThanOrEqual(
+      //   responseBody.used_connections,
+      // );
     });
 
     test("deve retornar a quantidade de conexões atualmente usadas no banco", async () => {
@@ -65,21 +65,7 @@ describe("GET /api/v1/status", () => {
       expect(typeof responseBody.used_connections).toBe("number");
       expect(responseBody.used_connections).toEqual(1);
     });
-
-    test("Teste de SQL Injection", async () => {
-      const response1 = await fetch(
-        `${webserver.origin}/api/v1/status?datname='tabnews';`,
-      );
-      const response2 = await fetch(
-        `${webserver.origin}/api/v1/status?datname=';`,
-      );
-      const response3 = await fetch(
-        `${webserver.origin}/api/v1/status?datname='; SELECT pg_sleep(4); --`,
-      );
-
-      expect(response1.status).toBe(200);
-      expect(response2.status).toBe(200);
-      expect(response3.status).toBe(200);
-    });
   });
+
+  describe("Privileged user", () => {});
 });

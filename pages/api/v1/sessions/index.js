@@ -36,15 +36,28 @@ async function postHandler(request, response) {
   const newSession = await session.create(authenticateUser.id); // cria uma nova sessão para o usuário autenticado
   controller.setSessionCookie(newSession.token, response); // define o cookie de sessão no navegador do cliente usando o token da nova sessão criada
 
-  return response.status(201).json(newSession);
+  const secureOutputValues = authorization.filterOutput(
+    authenticateUser, // usuário que está tentando criar a sessão
+    userFeatures.READ_SESSION, // feature necessária para ler os dados da sessão
+    newSession, // recurso criado que será filtrado
+  );
+
+  return response.status(201).json(secureOutputValues);
 }
 
 async function deleteHandler(request, response) {
+  const userTryingToDeleteSession = request.context.user;
   const sessionToken = request.cookies.session_id;
+
   const sessionObject = await session.findOneValidByToken(sessionToken);
   const expiredSession = await session.expireById(sessionObject.id);
-
   controller.clearSessionCookie(response);
 
-  return response.status(200).json(expiredSession);
+  const secureOutputValues = authorization.filterOutput(
+    userTryingToDeleteSession,
+    userFeatures.READ_SESSION,
+    expiredSession,
+  );
+
+  return response.status(200).json(secureOutputValues);
 }
