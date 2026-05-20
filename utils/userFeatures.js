@@ -6,6 +6,10 @@ const UPDATE_USER = "update:user";
 const UPDATE_USER_OTHERS = "update:user:others";
 const READ_USER = "read:user";
 const READ_USER_SELF = "read:user:self";
+const READ_MIGRATION = "read:migration";
+const CREATE_MIGRATION = "create:migration";
+const READ_STATUS = "read:status";
+const READ_STATUS_ALL = "read:status:all";
 
 const userFeatures = {
   READ_ACTIVATION_TOKEN,
@@ -16,6 +20,10 @@ const userFeatures = {
   UPDATE_USER_OTHERS,
   READ_USER,
   READ_USER_SELF,
+  READ_MIGRATION,
+  CREATE_MIGRATION,
+  READ_STATUS,
+  READ_STATUS_ALL,
 };
 
 export default userFeatures;

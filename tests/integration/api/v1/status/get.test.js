@@ -14,39 +14,85 @@ describe("GET /api/v1/status", () => {
     test("deve retornar status 200", async () => {
       const response = await fetch(`${webserver.origin}/api/v1/status`);
       expect(response.status).toBe(200);
+
+      const responseBody = await response.json();
+      expect(responseBody.dependencies).not.toHaveProperty("version");
     });
 
     test("deve retornar a data", async () => {
-      const response = await fetch(`${webserver.origin}/api/v1/status`);
+      const createdUser = await orchestrator.createUser();
+      const activatedUser = await orchestrator.activateUser(createdUser);
+      const sessionObject = await orchestrator.createSession(activatedUser.id);
+
+      const response = await fetch(`${webserver.origin}/api/v1/status`, {
+        headers: {
+          Cookie: `session_id=${sessionObject.token}`,
+        },
+      });
+
       const responseBody = await response.json();
       expect(responseBody.update_at).toBeDefined();
       const parsedUpdateAt = new Date(responseBody.update_at).toISOString();
       expect(parsedUpdateAt).toEqual(responseBody.update_at);
     });
+  });
 
+  describe("Privileged user", () => {
     test("deve retornar a versão 16.0 do postgres", async () => {
-      const response = await fetch(`${webserver.origin}/api/v1/status`);
-      const responseBody = await response.json();
-      expect(responseBody.postgres_version).toBeDefined();
-      expect(typeof responseBody.postgres_version).toBe("string");
+      const createdUser = await orchestrator.createUser();
+      const activatedUser = await orchestrator.activateUser(createdUser);
+      await orchestrator.addFeaturesToUser(createdUser, ["read:status:all"]);
+      const sessionObject = await orchestrator.createSession(activatedUser.id);
 
-      const parsedVersion = Number.parseFloat(responseBody.postgres_version);
+      const response = await fetch(`${webserver.origin}/api/v1/status`, {
+        headers: {
+          Cookie: `session_id=${sessionObject.token}`,
+        },
+      });
+
+      const responseBody = await response.json();
+      expect(responseBody.dependencies.database.version).toBeDefined();
+      expect(typeof responseBody.dependencies.database.version).toBe("string");
+
+      const parsedVersion = Number.parseFloat(
+        responseBody.dependencies.database.version,
+      );
       expect(Number.isNaN(parsedVersion)).toBe(false);
       expect(parsedVersion).toBeGreaterThanOrEqual(16.0);
     });
 
     test("deve retornar a quantidade maxima de conexões do banco", async () => {
-      const response = await fetch(`${webserver.origin}/api/v1/status`);
+      const createdUser = await orchestrator.createUser();
+      const activatedUser = await orchestrator.activateUser(createdUser);
+      await orchestrator.addFeaturesToUser(createdUser, ["read:status"]);
+      const sessionObject = await orchestrator.createSession(activatedUser.id);
+
+      const response = await fetch(`${webserver.origin}/api/v1/status`, {
+        headers: {
+          Cookie: `session_id=${sessionObject.token}`,
+        },
+      });
       const responseBody = await response.json();
-      expect(responseBody.max_connections).toBeDefined();
-      expect(typeof responseBody.max_connections).toBe("number");
-      // expect(responseBody.max_connections).toBeGreaterThanOrEqual(
-      //   responseBody.used_connections,
+      expect(responseBody.dependencies.database.max_connections).toBeDefined();
+      expect(typeof responseBody.dependencies.database.max_connections).toBe(
+        "number",
+      );
+      // expect(responseBody.dependencies.database.max_connections).toBeGreaterThanOrEqual(
+      //   responseBody.dependencies.database.used_connections,
       // );
     });
 
     test("deve retornar a quantidade de conexões atualmente usadas no banco", async () => {
-      const response = await fetch(`${webserver.origin}/api/v1/status`);
+      const createdUser = await orchestrator.createUser();
+      const activatedUser = await orchestrator.activateUser(createdUser);
+      await orchestrator.addFeaturesToUser(createdUser, ["read:status"]);
+      const sessionObject = await orchestrator.createSession(activatedUser.id);
+
+      const response = await fetch(`${webserver.origin}/api/v1/status`, {
+        headers: {
+          Cookie: `session_id=${sessionObject.token}`,
+        },
+      });
       const responseBody = await response.json();
       // console.log("Used Connections:", responseBody.used_connections);
       //  Por que está mostrando 27 conexões:
@@ -61,11 +107,11 @@ describe("GET /api/v1/status", () => {
       // A solução correta é usar um Pool de conexões:
       // O problema está em database.js. Ao invés de criar um novo Client a cada query, você deveria usar um Pool que reutiliza conexões.
 
-      expect(responseBody.used_connections).toBeDefined();
-      expect(typeof responseBody.used_connections).toBe("number");
-      expect(responseBody.used_connections).toEqual(1);
+      expect(responseBody.dependencies.database.used_connections).toBeDefined();
+      expect(typeof responseBody.dependencies.database.used_connections).toBe(
+        "number",
+      );
+      expect(responseBody.dependencies.database.used_connections).toEqual(1);
     });
   });
-
-  describe("Privileged user", () => {});
 });

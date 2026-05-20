@@ -70,6 +70,35 @@ function filterOutput(user, feature, resource) {
       used_at: resource.used_at,
     };
   }
+
+  if (feature === userFeatures.READ_MIGRATION) {
+    return resource.map((migration) => {
+      return {
+        path: migration.path,
+        name: migration.name,
+        timestamp: migration.timestamp,
+      };
+    });
+  }
+
+  if (feature === userFeatures.READ_STATUS) {
+    const output = {
+      update_at: resource.update_at,
+      dependencies: {
+        database: {
+          max_connections: resource.dependencies.database.max_connections,
+          used_connections: resource.dependencies.database.used_connections,
+        },
+      },
+    };
+
+    if (can(user, userFeatures.READ_STATUS_ALL)) {
+      output.dependencies.database.version =
+        resource.dependencies.database.version;
+    }
+
+    return output;
+  }
 }
 
 const authorization = {

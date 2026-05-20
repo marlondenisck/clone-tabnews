@@ -1,10 +1,5 @@
 import database from "@/infra/database";
 
-async function getStatusDate() {
-  const updateAt = new Date().toISOString();
-  return updateAt;
-}
-
 async function databaseVersion() {
   const databaseVersionResult = await database.query("SHOW server_version;");
   const databaseVersion = databaseVersionResult.rows[0].server_version;
@@ -28,7 +23,6 @@ async function usedConnections() {
 }
 
 const status = {
-  getStatusDate,
   databaseVersion,
   maxConnections,
   usedConnections,
