@@ -2,7 +2,7 @@ import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import status from "@/models/status";
 import authorization from "@/models/authorization";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 router.use(controller.injectAnonymousOrUser);
@@ -31,7 +31,7 @@ async function getHandler(request, response) {
 
   const secureOutput = authorization.filterOutput(
     userTryingToGet,
-    userFeatures.READ_STATUS,
+    availableFeatures.READ_STATUS,
     statusObject,
   );
 

@@ -427,7 +427,7 @@ Todo endpoint que requer feature específica usa o middleware `canRequest(featur
 
 ```javascript
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
   patchHandler,
 );
 ```
@@ -791,7 +791,7 @@ infra/
     └── wait-for-postgres.js     # Script de health-check
 
 utils/
-└── userFeatures.js              # Constantes de features
+└── availableFeatures.js              # Constantes de features
 
 tests/
 ├── integration/
@@ -849,7 +849,7 @@ const router = createRouter();
 router.use(controller.injectAnonymousOrUser);
 
 // 2. Verificar feature (se endpoint requer autenticação)
-router.get(controller.canRequest(userFeatures.FEATURE_NAME), getHandler);
+router.get(controller.canRequest(availableFeatures.FEATURE_NAME), getHandler);
 
 // 3. Handlers
 async function getHandler(request, response) {
@@ -962,7 +962,7 @@ E endpoints protegidos DEVEM usar:
 
 ```javascript
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
   patchHandler,
 );
 ```

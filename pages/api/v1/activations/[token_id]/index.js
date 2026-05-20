@@ -2,13 +2,13 @@ import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import activation from "models/activation";
 import authorization from "@/models/authorization";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser); // middleware
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
   patchHandler,
 );
 
@@ -33,7 +33,7 @@ async function patchHandler(request, response) {
 
   const secureOutputValue = authorization.filterOutput(
     userTryingToPatch,
-    userFeatures.READ_ACTIVATION_TOKEN,
+    availableFeatures.READ_ACTIVATION_TOKEN,
     usedActivationToken,
   );
 

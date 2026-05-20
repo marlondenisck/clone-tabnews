@@ -12,7 +12,7 @@ import {
   UnauthorizedError,
   ForbiddenError,
 } from "infra/errors";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 function onNoMatchHandler(request, response) {
   const publicErrorObject = new MethodNotAllowedError();
@@ -91,9 +91,9 @@ async function injectAuthenticatedUser(request) {
 async function injectAnonymousUser(request) {
   const anonymousUserObject = {
     features: [
-      userFeatures.READ_ACTIVATION_TOKEN,
-      userFeatures.CREATE_SESSION,
-      userFeatures.CREATE_USER,
+      availableFeatures.READ_ACTIVATION_TOKEN,
+      availableFeatures.CREATE_SESSION,
+      availableFeatures.CREATE_USER,
     ], // permissões mínimas para um usuário anônimo
   };
 

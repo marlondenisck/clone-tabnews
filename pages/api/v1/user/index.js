@@ -5,11 +5,11 @@ import user from "models/user";
 import session from "models/session";
 import authorization from "@/models/authorization";
 
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 router.use(controller.injectAnonymousOrUser); // middleware
-router.get(controller.canRequest(userFeatures.READ_SESSION), getHandler);
+router.get(controller.canRequest(availableFeatures.READ_SESSION), getHandler);
 
 export default router.handler(controller.errorHandlers);
 
@@ -29,7 +29,7 @@ async function getHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToGet, // usuário que está tentando acessar
-    userFeatures.READ_USER, // feature necessária para ler os dados do usuário
+    availableFeatures.READ_USER, // feature necessária para ler os dados do usuário
     userFound, // recurso encontrado que será filtrado
   );
 

@@ -24,7 +24,7 @@ Cada recurso tem um único `index.js` que usa `next-connect`:
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import modelName from "models/modelName";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 
@@ -34,19 +34,16 @@ router.use(controller.injectAnonymousOrUser);
 // 2. OPCIONAL: Middleware de autorização (se endpoint requer feature)
 router.get(getHandler);
 
-router.post(
-  controller.canRequest(userFeatures.CREATE_USER),
-  postHandler
-);
+router.post(controller.canRequest(availableFeatures.CREATE_USER), postHandler);
 
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
-  patchHandler
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
+  patchHandler,
 );
 
 router.delete(
-  controller.canRequest(userFeatures.READ_SESSION),
-  deleteHandler
+  controller.canRequest(availableFeatures.READ_SESSION),
+  deleteHandler,
 );
 
 // 3. OBRIGATÓRIO: Erro handler centralizado
@@ -55,7 +52,7 @@ export default router.handler(controller.errorHandlers);
 async function getHandler(request, response) {
   // request.context.user já contém usuário validado
   // request.context.user.features contém array de features
-  
+
   const result = await modelName.operation();
   return response.status(200).json(result);
 }
@@ -88,14 +85,16 @@ router.use(controller.injectAnonymousOrUser);
 ```
 
 Este middleware:
+
 - Verifica cookie `session_id`
 - Se existe: busca sessão no BD, injeta usuário autenticado
 - Se não existe: injeta usuário anônimo com features padrão
 - Armazena em `request.context.user`
 
 **Features de usuário anônimo:**
+
 ```javascript
-["read:activation_token", "create:session", "create:user"]
+["read:activation_token", "create:session", "create:user"];
 ```
 
 ### `canRequest(feature)`
@@ -103,39 +102,38 @@ Este middleware:
 Para endpoints protegidos, adicione **antes** do handler:
 
 ```javascript
-router.post(
-  controller.canRequest(userFeatures.READ_SESSION),
-  postHandler
-);
+router.post(controller.canRequest(availableFeatures.READ_SESSION), postHandler);
 ```
 
 Este middleware:
+
 - Verifica se `request.context.user.features` inclui a feature
 - Se não: lança `ForbiddenError` (403)
 - Se sim: permite prosseguir
 
 **Features atuais:**
+
 ```javascript
-READ_ACTIVATION_TOKEN  = "read:activation_token"  // Padrão
-CREATE_SESSION         = "create:session"          // Após ativar
-READ_SESSION           = "read:session"            // Após ativar
-CREATE_USER            = "create:user"             // Público
+READ_ACTIVATION_TOKEN = "read:activation_token"; // Padrão
+CREATE_SESSION = "create:session"; // Após ativar
+READ_SESSION = "read:session"; // Após ativar
+CREATE_USER = "create:user"; // Público
 ```
 
 ## Padrão de Status HTTP
 
-| Situação                   | Status |
-| -------------------------- | ------ |
-| GET com sucesso            | 200    |
-| POST que cria recurso      | 201    |
-| PATCH/PUT com sucesso      | 200    |
-| DELETE com sucesso         | 200    |
-| Recurso não encontrado     | 404    |
-| Não autenticado            | 401    |
-| Sem permissão (feature)    | 403    |
-| Validação falha            | 400/422 |
-| Método não suportado       | 405    |
-| Erro interno               | 500    |
+| Situação                | Status  |
+| ----------------------- | ------- |
+| GET com sucesso         | 200     |
+| POST que cria recurso   | 201     |
+| PATCH/PUT com sucesso   | 200     |
+| DELETE com sucesso      | 200     |
+| Recurso não encontrado  | 404     |
+| Não autenticado         | 401     |
+| Sem permissão (feature) | 403     |
+| Validação falha         | 400/422 |
+| Método não suportado    | 405     |
+| Erro interno            | 500     |
 
 ## Acesso ao Banco
 
@@ -146,13 +144,13 @@ import database from "infra/database";
 
 const result = await database.query({
   text: "SELECT * FROM users WHERE id = $1 AND LOWER(email) = LOWER($2)",
-  values: [userId, email] // Parametrizado!
+  values: [userId, email], // Parametrizado!
 });
 
 if (result.rowCount === 0) {
   throw new NotFoundError({
     message: "Usuário não encontrado.",
-    action: "Verifique se o ID está correto."
+    action: "Verifique se o ID está correto.",
   });
 }
 
@@ -208,28 +206,28 @@ import {
   ForbiddenError,
   NotFoundError,
   InternalServerError,
-  ServiceError
+  ServiceError,
 } from "infra/errors";
 
 // Uso correto:
 throw new ValidationError({
   message: "Email inválido.",
-  action: "Verifique o formato do email."
+  action: "Verifique o formato do email.",
 });
 
 throw new UnauthorizedError({
   message: "Senha não confere.",
-  action: "Tente novamente."
+  action: "Tente novamente.",
 });
 
 throw new ForbiddenError({
   message: "Você não possui permissão.",
-  action: "Verifique se sua conta está ativada."
+  action: "Verifique se sua conta está ativada.",
 });
 
 throw new NotFoundError({
   message: "Recurso não encontrado.",
-  action: "Verifique o ID informado."
+  action: "Verifique o ID informado.",
 });
 ```
 
@@ -242,10 +240,10 @@ Em handlers protegidos, acesse `request.context.user`:
 ```javascript
 async function patchHandler(request, response) {
   const user = request.context.user; // Já validado
-  
+
   // Verificar features (raramente necessário no handler)
   // O middleware já validou, mas pode checar se necessário
-  if (!authorization.can(user, userFeatures.READ_SESSION)) {
+  if (!authorization.can(user, availableFeatures.READ_SESSION)) {
     throw new ForbiddenError({...});
   }
 
@@ -264,24 +262,21 @@ import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import user from "models/user";
 import activation from "models/activation";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
-router.post(
-  controller.canRequest(userFeatures.CREATE_USER),
-  postHandler
-);
+router.post(controller.canRequest(availableFeatures.CREATE_USER), postHandler);
 
 export default router.handler(controller.errorHandlers);
 
 async function postHandler(request, response) {
   const newUser = await user.create(request.body);
-  
+
   const activationToken = await activation.create(newUser.id);
   await activation.sendEmailToUser(newUser, activationToken);
-  
+
   return response.status(201).json(newUser);
 }
 ```
@@ -293,26 +288,26 @@ async function postHandler(request, response) {
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import activation from "models/activation";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
-  patchHandler
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
+  patchHandler,
 );
 
 export default router.handler(controller.errorHandlers);
 
 async function patchHandler(request, response) {
   const activationTokenId = request.query.token_id;
-  
+
   // Modelo faz todas as validações
   const validToken = await activation.findOneValidById(activationTokenId);
   await activation.activateUserByUserId(validToken.user_id);
   const usedToken = await activation.markTokenAsUsed(validToken.id);
-  
+
   return response.status(200).json(usedToken);
 }
 ```
@@ -324,15 +319,17 @@ async function patchHandler(request, response) {
    - SEMPRE parametrizado: `$1` com `values: ["usuario"]` ✅
 
 2. ✅ **Senhas**: SEMPRE usar `models/password.js`
+
    ```javascript
    const hash = await password.hash(plainText);
    const isValid = await password.compare(plainText, hash);
    ```
 
 3. ✅ **Cookies**: SEMPRE usar `controller.setSessionCookie()` e `controller.clearSessionCookie()`
+
    ```javascript
-   controller.setSessionCookie(newToken, response);   // Login
-   controller.clearSessionCookie(response);           // Logout
+   controller.setSessionCookie(newToken, response); // Login
+   controller.clearSessionCookie(response); // Logout
    ```
 
 4. ✅ **Validação**: SEMPRE no modelo, NUNCA no handler
@@ -384,6 +381,7 @@ infra/migrations/
 ## Output
 
 Retorne:
+
 1. Caminho do arquivo criado/modificado
 2. Código completo da rota
 3. Se necessário, indique para criar migration ou testes (delegue para subagentes)

@@ -5,11 +5,11 @@ import user from "models/user";
 import activation from "models/activation";
 import authorization from "@/models/authorization";
 
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 router.use(controller.injectAnonymousOrUser);
-router.post(controller.canRequest(userFeatures.CREATE_USER), postHandler);
+router.post(controller.canRequest(availableFeatures.CREATE_USER), postHandler);
 
 export default router.handler(controller.errorHandlers);
 
@@ -28,7 +28,7 @@ async function postHandler(request, response) {
   // 3- filtrar os campos de saída com base na feature do usuário
   const secureOutputValues = authorization.filterOutput(
     userTryingToPost, // usuário que está tentando criar
-    userFeatures.READ_USER_SELF, // quando user usa recurso pra si próprio
+    availableFeatures.READ_USER_SELF, // quando user usa recurso pra si próprio
     newUser, // recurso criado que será filtrado
   );
 

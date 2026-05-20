@@ -2,14 +2,17 @@ import { createRouter } from "next-connect";
 
 import controller from "infra/controller";
 import migrator from "models/migrator";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 import authorization from "@/models/authorization";
 
 const router = createRouter();
 router.use(controller.injectAnonymousOrUser);
 
-router.get(controller.canRequest(userFeatures.READ_MIGRATION), getHandler);
-router.post(controller.canRequest(userFeatures.CREATE_MIGRATION), postHandler);
+router.get(controller.canRequest(availableFeatures.READ_MIGRATION), getHandler);
+router.post(
+  controller.canRequest(availableFeatures.CREATE_MIGRATION),
+  postHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 
@@ -20,7 +23,7 @@ async function getHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToGet,
-    userFeatures.READ_MIGRATION,
+    availableFeatures.READ_MIGRATION,
     pendingMigrations,
   );
 
@@ -33,7 +36,7 @@ async function postHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToPost,
-    userFeatures.READ_MIGRATION,
+    availableFeatures.READ_MIGRATION,
     migratedMigrations,
   );
 

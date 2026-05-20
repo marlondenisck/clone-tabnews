@@ -1,6 +1,10 @@
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
+import { InternalServerError } from "@/infra/errors";
 
 function can(user, feature, resource) {
+  validateUser(user); // valida o usuário antes de verificar as permissões
+  validateFeature(feature); // valida a feature antes de verificar as permissões
+
   let authorized = false; // inicialmente, o usuário não é autorizado
 
   // percorre as features do usuário para verificar se ele possui a feature necessária
@@ -9,12 +13,15 @@ function can(user, feature, resource) {
   }
 
   // lógica adicional para verificar se o usuário pode atualizar o recurso específico
-  if (feature === userFeatures.UPDATE_USER && resource) {
+  if (feature === availableFeatures.UPDATE_USER && resource) {
     authorized = false; // redefine a autorização para false, pois precisamos verificar o recurso
 
     // Verifica se o usuário é o mesmo que está tentando ser atualizado
     // Se for o mesmo usuário, ele pode atualizar seu próprio recurso. Caso contrário, ele precisa da permissão "update:user:others".
-    if (user.id === resource.id || can(user, userFeatures.UPDATE_USER_OTHERS)) {
+    if (
+      user.id === resource.id ||
+      can(user, availableFeatures.UPDATE_USER_OTHERS)
+    ) {
       authorized = true; // o usuário pode atualizar seu próprio recurso
     }
   }
@@ -22,9 +29,12 @@ function can(user, feature, resource) {
   return authorized; // retorna true se o usuário for autorizado, ou false caso contrário
 }
 
-// função para filtrar os campos de saída com base na feature do usuário
 function filterOutput(user, feature, resource) {
-  if (feature === userFeatures.READ_USER) {
+  validateUser(user);
+  validateFeature(feature);
+  validateResource(resource);
+
+  if (feature === availableFeatures.READ_USER) {
     return {
       id: resource.id,
       username: resource.username,
@@ -34,7 +44,7 @@ function filterOutput(user, feature, resource) {
     };
   }
 
-  if (feature === userFeatures.READ_USER_SELF) {
+  if (feature === availableFeatures.READ_USER_SELF) {
     if (user.id === resource.id) {
       return {
         id: resource.id,
@@ -47,7 +57,7 @@ function filterOutput(user, feature, resource) {
     }
   }
 
-  if (feature === userFeatures.READ_SESSION) {
+  if (feature === availableFeatures.READ_SESSION) {
     if (user.id === resource.user_id) {
       return {
         id: resource.id,
@@ -60,7 +70,7 @@ function filterOutput(user, feature, resource) {
     }
   }
 
-  if (feature === userFeatures.READ_ACTIVATION_TOKEN) {
+  if (feature === availableFeatures.READ_ACTIVATION_TOKEN) {
     return {
       id: resource.id,
       user_id: resource.user_id,
@@ -71,7 +81,7 @@ function filterOutput(user, feature, resource) {
     };
   }
 
-  if (feature === userFeatures.READ_MIGRATION) {
+  if (feature === availableFeatures.READ_MIGRATION) {
     return resource.map((migration) => {
       return {
         path: migration.path,
@@ -81,7 +91,7 @@ function filterOutput(user, feature, resource) {
     });
   }
 
-  if (feature === userFeatures.READ_STATUS) {
+  if (feature === availableFeatures.READ_STATUS) {
     const output = {
       update_at: resource.update_at,
       dependencies: {
@@ -92,12 +102,38 @@ function filterOutput(user, feature, resource) {
       },
     };
 
-    if (can(user, userFeatures.READ_STATUS_ALL)) {
+    if (can(user, availableFeatures.READ_STATUS_ALL)) {
       output.dependencies.database.version =
         resource.dependencies.database.version;
     }
 
     return output;
+  }
+}
+
+function validateUser(user) {
+  if (!user || !user.features) {
+    throw new InternalServerError({
+      cause: "É necessário fornecer um `user` no model `authorization`.",
+    });
+  }
+}
+
+function validateFeature(feature) {
+  if (!feature || !Object.values(availableFeatures).includes(feature)) {
+    throw new InternalServerError({
+      cause:
+        "É necessário fornecer uma `feature` conhecida no model `authorization`.",
+    });
+  }
+}
+
+function validateResource(resource) {
+  if (!resource) {
+    throw new InternalServerError({
+      cause:
+        "É necessário fornecer um `resource` no model `authorization.filterOutput`.",
+    });
   }
 }
 

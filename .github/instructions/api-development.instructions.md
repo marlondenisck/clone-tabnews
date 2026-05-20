@@ -29,7 +29,7 @@ pages/api/v1/[recurso]/[id]/index.js
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import modelName from "models/modelName";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 
@@ -38,17 +38,14 @@ router.use(controller.injectAnonymousOrUser);
 
 // 2. Proteção com feature (se endpoint requer autenticação)
 router.get(getHandler);
-router.post(
-  controller.canRequest(userFeatures.FEATURE_NAME),
-  postHandler
-);
+router.post(controller.canRequest(availableFeatures.FEATURE_NAME), postHandler);
 router.patch(
-  controller.canRequest(userFeatures.FEATURE_NAME),
-  patchHandler
+  controller.canRequest(availableFeatures.FEATURE_NAME),
+  patchHandler,
 );
 router.delete(
-  controller.canRequest(userFeatures.FEATURE_NAME),
-  deleteHandler
+  controller.canRequest(availableFeatures.FEATURE_NAME),
+  deleteHandler,
 );
 
 export default router.handler(controller.errorHandlers);
@@ -77,7 +74,7 @@ Para cada novo endpoint, SEMPRE adicionar à `documentacao.md`:
 
 1. **Seção no Markdown:**
 
-```markdown
+````markdown
 #### [MÉTODO] `/api/v1/[rota]`
 
 [Descrição breve do endpoint]
@@ -87,20 +84,26 @@ Para cada novo endpoint, SEMPRE adicionar à `documentacao.md`:
 **Autenticação:** ✅ / ❌ (requer feature: ?)
 
 **Parâmetros:** (se aplicável)
+
 - `param1` (tipo, obrigatório/opcional): Descrição
 
 **Body:** (se aplicável)
+
 ```json
 {}
 ```
+````
 
 **Resposta ([STATUS]):**
+
 ```json
 {}
 ```
 
 **Erros:**
+
 - `STATUS`: Descrição
+
 ```
 
 2. **Atualizar seção "Visão Geral"**
@@ -112,8 +115,10 @@ Para cada novo endpoint, SEMPRE adicionar à `documentacao.md`:
 Para cada novo endpoint, criar testes em:
 
 ```
+
 tests/integration/api/v1/[recurso]/[metodo].test.js
-```
+
+````
 
 Exemplo: `tests/integration/api/v1/posts/get.test.js`
 
@@ -159,17 +164,19 @@ Exemplo: `tests/integration/api/v1/posts/get.test.js`
 
 ```javascript
 router.use(controller.injectAnonymousOrUser);
-```
+````
 
 Este middleware:
+
 - ✅ Verifica cookie `session_id`
 - ✅ Se existe: busca sessão no BD, injeta usuário autenticado
 - ✅ Se não existe: injeta usuário anônimo com features padrão
 - ✅ Armazena em `request.context.user`
 
 **Features de usuário anônimo:**
+
 ```javascript
-["read:activation_token", "create:session", "create:user"]
+["read:activation_token", "create:session", "create:user"];
 ```
 
 ### `canRequest(feature)`
@@ -178,12 +185,13 @@ Para endpoints protegidos, adicione:
 
 ```javascript
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
-  patchHandler
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
+  patchHandler,
 );
 ```
 
 Este middleware:
+
 - ✅ Verifica se `request.context.user.features` inclui a feature
 - ✅ Se não: lança `ForbiddenError` (403)
 - ✅ Se sim: permite prosseguir
@@ -194,13 +202,13 @@ Este middleware:
 
 ### Features Atuais
 
-Arquivo: `utils/userFeatures.js`
+Arquivo: `utils/availableFeatures.js`
 
 ```javascript
 const READ_ACTIVATION_TOKEN = "read:activation_token"; // Padrão ao criar usuário
-const CREATE_SESSION = "create:session";               // Adiciona ao ativar
-const READ_SESSION = "read:session";                   // Adiciona ao ativar
-const CREATE_USER = "create:user";                     // Disponível para todos
+const CREATE_SESSION = "create:session"; // Adiciona ao ativar
+const READ_SESSION = "read:session"; // Adiciona ao ativar
+const CREATE_USER = "create:user"; // Disponível para todos
 ```
 
 ### Fluxo de Features
@@ -221,7 +229,7 @@ Pode fazer login e acessar /user
 
 ### Ao Adicionar Nova Feature
 
-1. Adicione constante em `utils/userFeatures.js`
+1. Adicione constante em `utils/availableFeatures.js`
 2. Use em middleware `controller.canRequest(newFeature)`
 3. Documente em qual fluxo usuário recebe essa feature
 4. Crie testes: com feature, sem feature, usuário anônimo
@@ -234,14 +242,14 @@ Pode fazer login e acessar /user
 
 Use a classe correta para cada situação:
 
-| Classe | Status | Quando Usar | Exemplo |
-|--------|--------|-------------|-------------|
-| `ValidationError` | 400/422 | Entrada inválida, validação falha | Email duplicado, campo vazio |
-| `UnauthorizedError` | 401 | Autenticação falhou | Senha incorreta, sessão expirada |
-| `ForbiddenError` | 403 | Falta de permissão (feature ausente) | Usuário sem `read:session` |
-| `NotFoundError` | 404 | Recurso não existe | Usuário não encontrado |
-| `InternalServerError` | 500 | Erro inesperado | Crash, erro não tratado |
-| `ServiceError` | 503 | Serviço externo indisponível | BD desconectado |
+| Classe                | Status  | Quando Usar                          | Exemplo                          |
+| --------------------- | ------- | ------------------------------------ | -------------------------------- |
+| `ValidationError`     | 400/422 | Entrada inválida, validação falha    | Email duplicado, campo vazio     |
+| `UnauthorizedError`   | 401     | Autenticação falhou                  | Senha incorreta, sessão expirada |
+| `ForbiddenError`      | 403     | Falta de permissão (feature ausente) | Usuário sem `read:session`       |
+| `NotFoundError`       | 404     | Recurso não existe                   | Usuário não encontrado           |
+| `InternalServerError` | 500     | Erro inesperado                      | Crash, erro não tratado          |
+| `ServiceError`        | 503     | Serviço externo indisponível         | BD desconectado                  |
 
 ### Template de Erro
 
@@ -250,7 +258,7 @@ import { ValidationError } from "infra/errors";
 
 throw new ValidationError({
   message: "O email já está cadastrado no sistema.",
-  action: "Tente com outro email ou faça login se já tem conta."
+  action: "Tente com outro email ou faça login se já tem conta.",
 });
 ```
 
@@ -285,13 +293,13 @@ throw new ValidationError({
 async function validateUniqueEmail(email) {
   const existing = await database.query({
     text: `SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
-    values: [email] // Parametrizado!
+    values: [email], // Parametrizado!
   });
 
   if (existing.rowCount > 0) {
     throw new ValidationError({
       message: "O email já está cadastrado no sistema.",
-      action: "Tente com outro email ou faça login."
+      action: "Tente com outro email ou faça login.",
     });
   }
 }
@@ -301,20 +309,20 @@ async function create(userInput) {
   if (!userInput.email || !userInput.username || !userInput.password) {
     throw new ValidationError({
       message: "Email, username e password são obrigatórios.",
-      action: "Verifique se todos os campos foram preenchidos."
+      action: "Verifique se todos os campos foram preenchidos.",
     });
   }
 
   // Validar tipos
   if (typeof userInput.email !== "string") {
     throw new ValidationError({
-      message: "Email deve ser uma string."
+      message: "Email deve ser uma string.",
     });
   }
 
   // Validar unicidade
   await validateUniqueEmail(userInput.email);
-  
+
   // Continuar com criação...
 }
 ```
@@ -336,7 +344,7 @@ const isValid = await password.compare(plainText, hashedPassword);
 
 if (!isValid) {
   throw new UnauthorizedError({
-    message: "Senha não confere."
+    message: "Senha não confere.",
   });
 }
 ```
@@ -392,7 +400,7 @@ describe("[MÉTODO] /api/v1/[rota]", () => {
   describe("Casos de sucesso", () => {
     test("Quando dados válidos", async () => {
       const response = await fetch(`${webserver.origin}/api/v1/...`, {
-        method: "GET"
+        method: "GET",
       });
       expect(response.status).toBe(200);
     });
@@ -401,7 +409,7 @@ describe("[MÉTODO] /api/v1/[rota]", () => {
   describe("Casos de erro", () => {
     test("Quando recurso não existe", async () => {
       const response = await fetch(`${webserver.origin}/api/v1/...`, {
-        method: "GET"
+        method: "GET",
       });
       expect(response.status).toBe(404);
       const body = await response.json();
@@ -416,12 +424,12 @@ describe("[MÉTODO] /api/v1/[rota]", () => {
 Arquivo: `tests/orchestrator.js`
 
 ```javascript
-await orchestrator.createUser();           // Cria usuário (não ativado)
-await orchestrator.createSession(user);    // Cria sessão (requer ativação)
-await orchestrator.activateUser(user);     // Ativa usuário
-await orchestrator.clearDatabase();         // Limpa BD completo
+await orchestrator.createUser(); // Cria usuário (não ativado)
+await orchestrator.createSession(user); // Cria sessão (requer ativação)
+await orchestrator.activateUser(user); // Ativa usuário
+await orchestrator.clearDatabase(); // Limpa BD completo
 await orchestrator.runPendingMigrations(); // Executa migrações
-await orchestrator.getLastEmail();         // Obtém último email
+await orchestrator.getLastEmail(); // Obtém último email
 ```
 
 ---
@@ -442,14 +450,14 @@ await orchestrator.getLastEmail();         // Obtém último email
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import activation from "models/activation";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
 
 router.use(controller.injectAnonymousOrUser);
 router.patch(
-  controller.canRequest(userFeatures.READ_ACTIVATION_TOKEN),
-  patchHandler
+  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
+  patchHandler,
 );
 
 export default router.handler(controller.errorHandlers);
@@ -463,7 +471,7 @@ async function patchHandler(request, response) {
   await activation.activateUserByUserId(validActivationToken.user_id);
 
   const usedActivationToken = await activation.markTokenAsUsed(
-    validActivationToken.id
+    validActivationToken.id,
   );
 
   return response.status(200).json(usedActivationToken);
@@ -480,7 +488,7 @@ describe("PATCH /api/v1/activations/[token_id]", () => {
 
     const response = await fetch(
       `${webserver.origin}/api/v1/activations/${token.id}`,
-      { method: "PATCH" }
+      { method: "PATCH" },
     );
 
     expect(response.status).toBe(200);
@@ -493,12 +501,12 @@ describe("PATCH /api/v1/activations/[token_id]", () => {
     const token = await activation.create(user.id);
 
     await fetch(`${webserver.origin}/api/v1/activations/${token.id}`, {
-      method: "PATCH"
+      method: "PATCH",
     });
 
     const response = await fetch(
       `${webserver.origin}/api/v1/activations/${token.id}`,
-      { method: "PATCH" }
+      { method: "PATCH" },
     );
 
     expect(response.status).toBe(404);
@@ -525,7 +533,7 @@ Antes de fazer commit:
 - **Documentação Principal:** [documentacao.md](documentacao.md)
 - **Testes de Exemplo:** [tests/integration/api/v1/](tests/integration/api/v1/)
 - **Modelos:** [models/](models/)
-- **Features:** [utils/userFeatures.js](utils/userFeatures.js)
+- **Features:** [utils/availableFeatures.js](utils/availableFeatures.js)
 - **Controlador:** [infra/controller.js](infra/controller.js)
 - **Erros:** [infra/errors/index.js](infra/errors/index.js)
 

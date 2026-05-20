@@ -6,13 +6,16 @@ import authentication from "models/authentication";
 import session from "models/session";
 import authorization from "@/models/authorization";
 
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 import { ForbiddenError } from "@/infra/errors";
 
 const router = createRouter();
 router.use(controller.injectAnonymousOrUser); // middleware
 
-router.post(controller.canRequest(userFeatures.CREATE_SESSION), postHandler);
+router.post(
+  controller.canRequest(availableFeatures.CREATE_SESSION),
+  postHandler,
+);
 router.delete(deleteHandler);
 
 export default router.handler(controller.errorHandlers);
@@ -26,7 +29,7 @@ async function postHandler(request, response) {
   );
 
   // verifica se o usuário autenticado tem permissão para criar uma sessão
-  if (!authorization.can(authenticateUser, userFeatures.CREATE_SESSION)) {
+  if (!authorization.can(authenticateUser, availableFeatures.CREATE_SESSION)) {
     throw new ForbiddenError({
       message: "Seu usuário não tem permissão para criar uma sessão.",
       action: "Entre em contato com o suporte para obter mais informações.",
@@ -38,7 +41,7 @@ async function postHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     authenticateUser, // usuário que está tentando criar a sessão
-    userFeatures.READ_SESSION, // feature necessária para ler os dados da sessão
+    availableFeatures.READ_SESSION, // feature necessária para ler os dados da sessão
     newSession, // recurso criado que será filtrado
   );
 
@@ -55,7 +58,7 @@ async function deleteHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToDeleteSession,
-    userFeatures.READ_SESSION,
+    availableFeatures.READ_SESSION,
     expiredSession,
   );
 

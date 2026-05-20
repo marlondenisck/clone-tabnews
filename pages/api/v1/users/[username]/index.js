@@ -1,14 +1,17 @@
 import { createRouter } from "next-connect";
 import controller from "infra/controller";
 import user from "models/user";
-import userFeatures from "@/utils/userFeatures";
+import availableFeatures from "@/infra/features";
 import authorization from "@/models/authorization";
 import { ForbiddenError } from "@/infra/errors";
 
 const router = createRouter();
 router.use(controller.injectAnonymousOrUser);
 router.get(getHandler);
-router.patch(controller.canRequest(userFeatures.UPDATE_USER), patchHandler);
+router.patch(
+  controller.canRequest(availableFeatures.UPDATE_USER),
+  patchHandler,
+);
 
 export default router.handler(controller.errorHandlers);
 
@@ -19,7 +22,7 @@ async function getHandler(request, response) {
 
   const secureOutputValues = authorization.filterOutput(
     userTryingToGet,
-    userFeatures.READ_USER,
+    availableFeatures.READ_USER,
     userFound,
   );
   return response.status(200).json(secureOutputValues);
@@ -35,7 +38,11 @@ async function patchHandler(request, response) {
 
   // verificar se o usuário não tem permissão para atualizar o recurso alvo
   if (
-    !authorization.can(userTryingToPatch, userFeatures.UPDATE_USER, targetUser)
+    !authorization.can(
+      userTryingToPatch,
+      availableFeatures.UPDATE_USER,
+      targetUser,
+    )
   ) {
     throw new ForbiddenError({
       message: "Você nao tem permissão para atualizar outro usuário.",
@@ -49,7 +56,7 @@ async function patchHandler(request, response) {
   // filtrar os campos de saída com base na feature do usuário
   const secureOutputValues = authorization.filterOutput(
     userTryingToPatch, // usuário que está tentando atualizar
-    userFeatures.READ_USER, // feature necessária para ler os dados do usuário
+    availableFeatures.READ_USER, // feature necessária para ler os dados do usuário
     updatedUser, // recurso atualizado que será filtrado
   );
 

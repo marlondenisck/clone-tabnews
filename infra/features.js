@@ -11,7 +11,7 @@ const CREATE_MIGRATION = "create:migration";
 const READ_STATUS = "read:status";
 const READ_STATUS_ALL = "read:status:all";
 
-const userFeatures = {
+const availableFeatures = {
   READ_ACTIVATION_TOKEN,
   CREATE_SESSION,
   READ_SESSION,
@@ -26,4 +26,4 @@ const userFeatures = {
   READ_STATUS_ALL,
 };
 
-export default userFeatures;
+export default availableFeatures;
