@@ -128,11 +128,47 @@ describe("POST /api/v1/sessions", () => {
       expect(Date.parse(responseBody.expires_at)).not.toBeNaN(); // Verifica se a data de expiração é válida
       expect(Date.parse(responseBody.created_at)).not.toBeNaN(); // Verifica se a data de criação é válida
       expect(Date.parse(responseBody.updated_at)).not.toBeNaN(); // Verifica se a data de atualização é válida
+      // `expires_at` é calculado na aplicação antes da persistência.
+      // `created_at` é calculado depois na camada do banco de dados.
+      // Por isso, o tempo real entre as duas datas pode ficar ligeiramente
+      // menor do que o tempo de expiração configurado e não bater 30 dias nos
+      // milissegundos caso seja calculado apenas `expires_at` - `created_at`.
+      // Então a ideia é garantir que no momento `expires_at` seja maior que
+      // `created_at`, e também que possa existir distância de até 5 segundo
+      // entre as duas datas para cobrir o caso do banco sofrer algum load
+      // inesperado nos testes.
+
+      /**
+       * Nos testes sobre criar uma sessão válida, a propriedade `expires_at`
+        do objeto de sessão é calculada na camada da aplicação, antes da
+        persistência. Já a propriedade `created_at` é calculada depois, lá na
+        camada do banco de dados, o que faz uma sessão não ter exatamente
+        30 dias de expiração em milissegundos que seriam `2592000000` e ficando
+        então com valores muito próximos como `2591999991`, por exemplo, que
+        são 30 dias menos 9 milissegundos.
+
+        Os testes atuais já tentavam compensar esta diferença ao zerar os
+        segundos das datas envolvidas, mas é uma alternativa que possui um furo
+        dependendo de algumas condições como o virar do minuto. Tentei pegar
+        este comportamento para mostrar em uma aula, mas não consegui e isto
+        estava me agoniando ao pensar que algum aluno poderia ver o seu CI
+        quebrando e não entender o motivo.
+
+        Então para já evitar esta situação daqui para frente e depois de
+        sugestões de vários alunos, optei por adicionar uma margem de erro de
+        5 segundos entre o que é esperado (30 dias exatos de expiração) e o que
+        o objeto de sessão de fato possui de tempo de expiração.
+       */
+
       const expiresAt = new Date(responseBody.expires_at);
       const createdAt = new Date(responseBody.created_at);
-      expiresAt.setMilliseconds(0);
-      createdAt.setMilliseconds(0);
-      expect(expiresAt - createdAt).toBe(session.EXPIRATION_IN_MILLISECONDS); // Verifica se a data de expiração é igual à data de criação mais o tempo de expiração definido
+
+      expect(expiresAt >= createdAt).toBe(true);
+
+      const actualLifetimeInMilliseconds = expiresAt - createdAt;
+      const lifetimeDifferenceInMilliseconds =
+        session.EXPIRATION_IN_MILLISECONDS - actualLifetimeInMilliseconds;
+      expect(lifetimeDifferenceInMilliseconds).toBeLessThanOrEqual(5000);
 
       const parsedSetCookie = setCookieParser(response, {
         map: true, // Retorna um objeto mapeado em vez de um array

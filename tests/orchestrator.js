@@ -64,8 +64,8 @@ async function createUser(userObject = {}) {
   });
 }
 
-async function createSession(userObjectId) {
-  return await session.create(userObjectId);
+async function createSession(userObject) {
+  return await session.create(userObject.id);
 }
 
 async function activateUser(inactiveUser) {

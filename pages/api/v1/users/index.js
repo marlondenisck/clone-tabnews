@@ -7,11 +7,10 @@ import authorization from "@/models/authorization";
 
 import availableFeatures from "@/infra/features";
 
-const router = createRouter();
-router.use(controller.injectAnonymousOrUser);
-router.post(controller.canRequest(availableFeatures.CREATE_USER), postHandler);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .post(controller.canRequest(availableFeatures.CREATE_USER), postHandler)
+  .handler(controller.errorHandlers);
 
 async function postHandler(request, response) {
   const userTryingToPost = request.context.user;

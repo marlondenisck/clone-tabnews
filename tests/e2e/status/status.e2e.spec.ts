@@ -31,7 +31,7 @@ test.describe("Página de Status", () => {
         body: JSON.stringify({
           used_connections: 1,
           max_connections: 10,
-          update_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }),
       });
     });

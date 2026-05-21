@@ -49,6 +49,11 @@ function setSessionCookie(newSessionToken, response) {
     httpOnly: true, // Impede o acesso ao cookie via JavaScript, aumentando a segurança contra ataques XSS
     sameSite: "strict", // Impede o envio do cookie em requisições cross-site, aumentando a segurança contra ataques CSRF
   });
+  /*
+  SameSite=Strict: mais seguro, quase nunca envia cross-site.
+  SameSite=Lax: equilíbrio entre segurança e usabilidade.
+  SameSite=None; Secure: envia sempre cross-site, exige HTTPS.
+  */
 
   response.setHeader("Set-Cookie", setCookie);
 }

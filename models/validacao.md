@@ -37,7 +37,7 @@ function parseLoginInput(body) {
 Depois no fluxo:
 
 - se `parseLoginInput` retornar `null` -> responder erro genérico de autenticação.
-- se válido -> segue para `getAuthenticateUser`.
+- se válido -> segue para `getUser`.
 
 Outras libs possíveis:
 

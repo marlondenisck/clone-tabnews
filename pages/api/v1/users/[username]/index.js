@@ -5,15 +5,11 @@ import availableFeatures from "@/infra/features";
 import authorization from "@/models/authorization";
 import { ForbiddenError } from "@/infra/errors";
 
-const router = createRouter();
-router.use(controller.injectAnonymousOrUser);
-router.get(getHandler);
-router.patch(
-  controller.canRequest(availableFeatures.UPDATE_USER),
-  patchHandler,
-);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .get(getHandler)
+  .patch(controller.canRequest(availableFeatures.UPDATE_USER), patchHandler)
+  .handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   const userTryingToGet = request.context.user;

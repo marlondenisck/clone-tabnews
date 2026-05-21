@@ -5,16 +5,11 @@ import migrator from "models/migrator";
 import availableFeatures from "@/infra/features";
 import authorization from "@/models/authorization";
 
-const router = createRouter();
-router.use(controller.injectAnonymousOrUser);
-
-router.get(controller.canRequest(availableFeatures.READ_MIGRATION), getHandler);
-router.post(
-  controller.canRequest(availableFeatures.CREATE_MIGRATION),
-  postHandler,
-);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .get(controller.canRequest(availableFeatures.READ_MIGRATION), getHandler)
+  .post(controller.canRequest(availableFeatures.CREATE_MIGRATION), postHandler)
+  .handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   const userTryingToGet = request.context.user;

@@ -93,7 +93,7 @@ function filterOutput(user, feature, resource) {
 
   if (feature === availableFeatures.READ_STATUS) {
     const output = {
-      update_at: resource.update_at,
+      updated_at: resource.updated_at,
       dependencies: {
         database: {
           max_connections: resource.dependencies.database.max_connections,

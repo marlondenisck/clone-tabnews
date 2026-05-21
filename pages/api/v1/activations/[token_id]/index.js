@@ -4,15 +4,13 @@ import activation from "models/activation";
 import authorization from "@/models/authorization";
 import availableFeatures from "@/infra/features";
 
-const router = createRouter();
-
-router.use(controller.injectAnonymousOrUser); // middleware
-router.patch(
-  controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
-  patchHandler,
-);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .patch(
+    controller.canRequest(availableFeatures.READ_ACTIVATION_TOKEN),
+    patchHandler,
+  )
+  .handler(controller.errorHandlers);
 
 async function patchHandler(request, response) {
   const userTryingToPatch = request.context.user;

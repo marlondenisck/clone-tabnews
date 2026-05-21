@@ -23,7 +23,7 @@ Retorna informações sobre o status e saúde do banco de dados PostgreSQL.
 
 ```json
 {
-  "update_at": "2026-05-13T10:30:45.123Z",
+  "updated_at": "2026-05-13T10:30:45.123Z",
   "postgres_version": "15.2",
   "max_connections": 100,
   "used_connections": 5
@@ -32,7 +32,7 @@ Retorna informações sobre o status e saúde do banco de dados PostgreSQL.
 
 **Descrição dos campos:**
 
-- `update_at`: Timestamp ISO da última atualização
+- `updated_at`: Timestamp ISO da última atualização
 - `postgres_version`: Versão do PostgreSQL
 - `max_connections`: Número máximo de conexões permitidas
 - `used_connections`: Número de conexões ativas no momento
@@ -372,7 +372,7 @@ Testa conectividade e saúde geral do sistema.
 
 ```json
 {
-  "update_at": "2026-05-13T10:30:45.123Z",
+  "updated_at": "2026-05-13T10:30:45.123Z",
   "postgres_version": "15.2",
   "max_connections": 100,
   "used_connections": 5
@@ -616,9 +616,9 @@ A lógica de negócio está organizada em modelos reutilizáveis em `models/`:
 
 **Funções Principais:**
 
-| Função                                 | Descrição                                                       |
-| -------------------------------------- | --------------------------------------------------------------- |
-| `getAuthenticateUser(email, password)` | Busca usuário, compara senha, lança UnauthorizedError se falhar |
+| Função                     | Descrição                                                       |
+| -------------------------- | --------------------------------------------------------------- |
+| `getUser(email, password)` | Busca usuário, compara senha, lança UnauthorizedError se falhar |
 
 ### `authorization.js` — Autorização
 

@@ -38,7 +38,7 @@ describe("GET /api/v1/user", () => {
       // Ativa o usuário para garantir que ele tenha as features necessárias para acessar o endpoint de usuário (como read:activation_token, que é requisito para criar sessão e acessar o endpoint de usuário).
       const activatedUser = await orchestrator.activateUser(createdUser);
       // Cria uma sessão válida para o usuário, gerando um token de autenticação.
-      const sessionObj = await orchestrator.createSession(createdUser.id);
+      const sessionObj = await orchestrator.createSession(createdUser);
 
       // Envia o cookie session_id para simular um usuário já autenticado.
       const response = await fetch(`${webserver.origin}/api/v1/user`, {
@@ -146,7 +146,7 @@ describe("GET /api/v1/user", () => {
       });
 
       const activatedUser = await orchestrator.activateUser(createdUser);
-      const sessionObject = await orchestrator.createSession(createdUser.id);
+      const sessionObject = await orchestrator.createSession(createdUser);
 
       // Volta ao tempo real para validar a sessão contra NOW() do banco.
       jest.useRealTimers();
@@ -202,7 +202,7 @@ describe("GET /api/v1/user", () => {
         username: "UserWithExpiredSession",
       });
 
-      const sessionObject = await orchestrator.createSession(createdUser.id);
+      const sessionObject = await orchestrator.createSession(createdUser);
 
       // Retorna ao relógio real para validar expiração contra o horário atual do banco.
       jest.useRealTimers();

@@ -9,21 +9,16 @@ import authorization from "@/models/authorization";
 import availableFeatures from "@/infra/features";
 import { ForbiddenError } from "@/infra/errors";
 
-const router = createRouter();
-router.use(controller.injectAnonymousOrUser); // middleware
-
-router.post(
-  controller.canRequest(availableFeatures.CREATE_SESSION),
-  postHandler,
-);
-router.delete(deleteHandler);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .post(controller.canRequest(availableFeatures.CREATE_SESSION), postHandler)
+  .delete(deleteHandler)
+  .handler(controller.errorHandlers);
 
 async function postHandler(request, response) {
   const userInputValues = request.body;
   // autentica o usuário usando as credenciais fornecidas (email e senha) e retorna o objeto do usuário autenticado
-  const authenticateUser = await authentication.getAuthenticateUser(
+  const authenticateUser = await authentication.getUser(
     userInputValues.email,
     userInputValues.password,
   );

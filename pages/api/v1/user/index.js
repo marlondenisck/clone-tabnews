@@ -7,11 +7,10 @@ import authorization from "@/models/authorization";
 
 import availableFeatures from "@/infra/features";
 
-const router = createRouter();
-router.use(controller.injectAnonymousOrUser); // middleware
-router.get(controller.canRequest(availableFeatures.READ_SESSION), getHandler);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .get(controller.canRequest(availableFeatures.READ_SESSION), getHandler)
+  .handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   const sessionToken = request.cookies.session_id;

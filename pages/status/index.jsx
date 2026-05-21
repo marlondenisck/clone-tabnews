@@ -60,7 +60,7 @@ export function Status() {
                   Atualizado em
                 </dt>
                 <dd className="m-0 font-sans text-[0.88rem] font-medium leading-tight text-[#222222]">
-                  {formatDateToHuman(data.update_at)}
+                  {formatDateToHuman(data.updated_at)}
                 </dd>
               </div>
             </dl>

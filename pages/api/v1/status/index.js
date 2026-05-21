@@ -4,11 +4,10 @@ import status from "@/models/status";
 import authorization from "@/models/authorization";
 import availableFeatures from "@/infra/features";
 
-const router = createRouter();
-router.use(controller.injectAnonymousOrUser);
-router.get(getHandler);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .get(getHandler)
+  .handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   const userTryingToGet = request.context.user;
@@ -19,7 +18,7 @@ async function getHandler(request, response) {
   const usedConnections = await status.usedConnections();
 
   const statusObject = {
-    update_at: updateAt,
+    updated_at: updateAt,
     dependencies: {
       database: {
         version: databaseVersion,

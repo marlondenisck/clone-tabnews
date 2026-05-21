@@ -3,6 +3,8 @@ import webserver from "@/infra/webserver";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
+  await orchestrator.clearDatabase();
+  await orchestrator.runPendingMigrations();
 });
 
 describe("GET /api/v1/status", () => {
@@ -22,7 +24,7 @@ describe("GET /api/v1/status", () => {
     test("deve retornar a data", async () => {
       const createdUser = await orchestrator.createUser();
       const activatedUser = await orchestrator.activateUser(createdUser);
-      const sessionObject = await orchestrator.createSession(activatedUser.id);
+      const sessionObject = await orchestrator.createSession(activatedUser);
 
       const response = await fetch(`${webserver.origin}/api/v1/status`, {
         headers: {
@@ -31,9 +33,33 @@ describe("GET /api/v1/status", () => {
       });
 
       const responseBody = await response.json();
-      expect(responseBody.update_at).toBeDefined();
-      const parsedUpdateAt = new Date(responseBody.update_at).toISOString();
-      expect(parsedUpdateAt).toEqual(responseBody.update_at);
+      expect(responseBody.updated_at).toBeDefined();
+      const parsedUpdateAt = new Date(responseBody.updated_at).toISOString();
+      expect(parsedUpdateAt).toEqual(responseBody.updated_at);
+    });
+  });
+
+  describe("Default user", () => {
+    test("tentando verificar o status atual do sistema", async () => {
+      const createdUser = await orchestrator.createUser();
+      const activatedUser = await orchestrator.activateUser(createdUser);
+      const sessionObject = await orchestrator.createSession(activatedUser);
+
+      const response = await fetch(`${webserver.origin}/api/v1/status`, {
+        headers: {
+          Cookie: `session_id=${sessionObject.token}`,
+        },
+      });
+      expect(response.status).toBe(200);
+
+      const responseBody = await response.json();
+
+      const parsedUpdatedAt = new Date(responseBody.updated_at).toISOString();
+      expect(responseBody.updated_at).toEqual(parsedUpdatedAt);
+
+      expect(responseBody.dependencies.database.max_connections).toEqual(100);
+      expect(responseBody.dependencies.database.used_connections).toEqual(1);
+      expect(responseBody.dependencies.database).not.toHaveProperty("version");
     });
   });
 
@@ -42,7 +68,7 @@ describe("GET /api/v1/status", () => {
       const createdUser = await orchestrator.createUser();
       const activatedUser = await orchestrator.activateUser(createdUser);
       await orchestrator.addFeaturesToUser(createdUser, ["read:status:all"]);
-      const sessionObject = await orchestrator.createSession(activatedUser.id);
+      const sessionObject = await orchestrator.createSession(activatedUser);
 
       const response = await fetch(`${webserver.origin}/api/v1/status`, {
         headers: {
@@ -65,7 +91,7 @@ describe("GET /api/v1/status", () => {
       const createdUser = await orchestrator.createUser();
       const activatedUser = await orchestrator.activateUser(createdUser);
       await orchestrator.addFeaturesToUser(createdUser, ["read:status"]);
-      const sessionObject = await orchestrator.createSession(activatedUser.id);
+      const sessionObject = await orchestrator.createSession(activatedUser);
 
       const response = await fetch(`${webserver.origin}/api/v1/status`, {
         headers: {
@@ -86,7 +112,7 @@ describe("GET /api/v1/status", () => {
       const createdUser = await orchestrator.createUser();
       const activatedUser = await orchestrator.activateUser(createdUser);
       await orchestrator.addFeaturesToUser(createdUser, ["read:status"]);
-      const sessionObject = await orchestrator.createSession(activatedUser.id);
+      const sessionObject = await orchestrator.createSession(activatedUser);
 
       const response = await fetch(`${webserver.origin}/api/v1/status`, {
         headers: {
