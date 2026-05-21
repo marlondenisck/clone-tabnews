@@ -1,5 +1,6 @@
 import orchestrator from "tests/orchestrator";
 import session from "models/session";
+import webserver from "@/infra/webserver";
 
 beforeEach(async () => {
   await orchestrator.waitForAllServices();
@@ -7,7 +8,7 @@ beforeEach(async () => {
   await orchestrator.runPendingMigrations();
 });
 
-describe("POST /api/v1/sessions - Segurança", () => {
+describe("Segurança", () => {
   describe("Tentativas de SQL Injection", () => {
     test("Email com SQL injection básico: admin'--", async () => {
       await orchestrator.createUser({
@@ -15,7 +16,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
         password: "senha123",
       });
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -34,7 +35,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     test("Email com SQL injection: admin' OR '1'='1", async () => {
       await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -53,7 +54,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     test("Email com SQL injection: DROP TABLE users;--", async () => {
       await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +81,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     test("Email vazio", async () => {
       await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,7 +100,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
         email: "user@example.com",
       });
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +117,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     test("Email null", async () => {
       await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,7 +136,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
         email: "user@example.com",
       });
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,7 +153,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     test("Body vazio", async () => {
       await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -173,7 +174,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
 
       const startInvalid = Date.now();
       const responseInvalid = await fetch(
-        "http://localhost:3000/api/v1/sessions",
+        `${webserver.origin}/api/v1/sessions`,
         {
           method: "POST",
           headers: {
@@ -188,19 +189,16 @@ describe("POST /api/v1/sessions - Segurança", () => {
       const timeInvalid = Date.now() - startInvalid;
 
       const startValid = Date.now();
-      const responseValid = await fetch(
-        "http://localhost:3000/api/v1/sessions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: "existe@example.com",
-            password: "senha-invalida",
-          }),
+      const responseValid = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          email: "existe@example.com",
+          password: "senha-invalida",
+        }),
+      });
       const timeValid = Date.now() - startValid;
 
       expect(responseInvalid.status).toBe(401);
@@ -225,18 +223,21 @@ describe("POST /api/v1/sessions - Segurança", () => {
 
   describe("Manipulação de cookies", () => {
     test("Não permite acesso via JavaScript (httpOnly)", async () => {
-      const credentials = {
+      const user = await orchestrator.createUser({
         email: "user@example.com",
         password: "senha123",
-      };
-      await orchestrator.createUser(credentials);
+      });
+      await orchestrator.activateUser(user);
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
       });
 
       const setCookieHeader = response.headers.get("set-cookie");
@@ -245,18 +246,21 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
 
     test("Protege contra CSRF com SameSite=Strict", async () => {
-      const credentials = {
+      const user = await orchestrator.createUser({
         email: "user@example.com",
         password: "senha123",
-      };
-      await orchestrator.createUser(credentials);
+      });
+      await orchestrator.activateUser(user);
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
       });
 
       const setCookieHeader = response.headers.get("set-cookie");
@@ -265,18 +269,21 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
 
     test("Cookie seguro em desenvolvimento (sem Secure flag)", async () => {
-      const credentials = {
+      const user = await orchestrator.createUser({
         email: "user@example.com",
         password: "senha123",
-      };
-      await orchestrator.createUser(credentials);
+      });
+      await orchestrator.activateUser(user);
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
       });
 
       const setCookieHeader = response.headers.get("set-cookie");
@@ -287,28 +294,34 @@ describe("POST /api/v1/sessions - Segurança", () => {
 
   describe("Token e sessão", () => {
     test("Token é único a cada criação de sessão", async () => {
-      const credentials = {
+      const user = await orchestrator.createUser({
         email: "user@example.com",
-        password: "senha123",
-      };
-      await orchestrator.createUser(credentials);
+        password: "senhaA",
+      });
+      await orchestrator.activateUser(user);
 
-      const response1 = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response1 = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senhaA",
+        }),
       });
 
       const body1 = await response1.json();
 
-      const response2 = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response2 = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senhaA",
+        }),
       });
 
       const body2 = await response2.json();
@@ -318,18 +331,21 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
 
     test("Token tem comprimento adequado (96 caracteres hex = 48 bytes)", async () => {
-      const credentials = {
+      const user = await orchestrator.createUser({
         email: "user@example.com",
         password: "senha123",
-      };
-      await orchestrator.createUser(credentials);
+      });
+      await orchestrator.activateUser(user);
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
       });
 
       const body = await response.json();
@@ -338,18 +354,21 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
 
     test("Sessão tem data de expiração válida", async () => {
-      const credentials = {
+      const user = await orchestrator.createUser({
         email: "user@example.com",
         password: "senha123",
-      };
-      await orchestrator.createUser(credentials);
+      });
+      await orchestrator.activateUser(user);
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
       });
 
       const body = await response.json();
@@ -377,7 +396,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
       // Simula um atacante tentando múltiplas senhas
       const attempts = [];
       for (let i = 0; i < 10; i++) {
-        const response = await fetch("http://localhost:3000/api/v1/sessions", {
+        const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -397,7 +416,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
 
   describe("Malformed requests", () => {
     test("JSON inválido", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -412,7 +431,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     test("Content-Type ausente", async () => {
       await orchestrator.createUser();
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         body: JSON.stringify({
           email: "user@example.com",
@@ -428,7 +447,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
         email: "valid@example.com",
       });
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -449,14 +468,16 @@ describe("POST /api/v1/sessions - Segurança", () => {
         email: "userA@example.com",
         password: "senhaA",
       });
+      await orchestrator.activateUser(userA);
 
-      await orchestrator.createUser({
+      const userB = await orchestrator.createUser({
         email: "userB@example.com",
         password: "senhaB",
       });
+      await orchestrator.activateUser(userB);
 
       // Cria sessão para usuário A
-      const responseA = await fetch("http://localhost:3000/api/v1/sessions", {
+      const responseA = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -482,7 +503,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
         email: "user@example.com",
       });
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -505,7 +526,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
         email: "user@example.com",
       });
 
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -525,7 +546,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
 
   describe("Método HTTP inválido", () => {
     test("GET /api/v1/sessions retorna 405 ou erro", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "GET",
       });
 
@@ -533,7 +554,7 @@ describe("POST /api/v1/sessions - Segurança", () => {
     });
 
     test("PUT /api/v1/sessions retorna 405 ou erro", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/sessions", {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -542,6 +563,485 @@ describe("POST /api/v1/sessions - Segurança", () => {
       });
 
       expect([405, 404]).toContain(response.status);
+    });
+  });
+
+  describe("Session fixation", () => {
+    test("Não reutiliza token de sessão expirada para novo usuário", async () => {
+      const user1 = await orchestrator.createUser({
+        email: "user1@example.com",
+        password: "senha1",
+      });
+      await orchestrator.activateUser(user1);
+
+      // Criar primeira sessão
+      const response1 = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: "user1@example.com",
+          password: "senha1",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const session1 = await response1.json();
+      const token1 = session1.token;
+
+      // Tentar usar o mesmo token após logout
+      const logoutResponse = await fetch(
+        `${webserver.origin}/api/v1/sessions`,
+        {
+          method: "DELETE",
+          headers: {
+            Cookie: `session_id=${token1}`,
+          },
+        },
+      );
+
+      expect(logoutResponse.status).toBe(200);
+
+      // Tentar usar o token expirado
+      const reuseResponse = await fetch(`${webserver.origin}/api/v1/user`, {
+        method: "GET",
+        headers: {
+          Cookie: `session_id=${token1}`,
+        },
+      });
+
+      expect(reuseResponse.status).toBe(401);
+    });
+  });
+
+  describe("Email enumeration", () => {
+    test("Não revela se email existe através de tempo de resposta", async () => {
+      await orchestrator.createUser({
+        email: "registered@example.com",
+        password: "senha123",
+      });
+
+      const timings = [];
+
+      // Testa email que não existe
+      for (let i = 0; i < 3; i++) {
+        const start = Date.now();
+        await fetch(`${webserver.origin}/api/v1/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "nonexistent@example.com",
+            password: "anypassword",
+          }),
+        });
+        timings.push(Date.now() - start);
+      }
+
+      const avgNonExistent = timings.reduce((a, b) => a + b) / timings.length;
+
+      timings.length = 0;
+
+      // Testa email que existe mas senha errada
+      for (let i = 0; i < 3; i++) {
+        const start = Date.now();
+        await fetch(`${webserver.origin}/api/v1/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "registered@example.com",
+            password: "wrongpassword",
+          }),
+        });
+        timings.push(Date.now() - start);
+      }
+
+      const avgExistent = timings.reduce((a, b) => a + b) / timings.length;
+
+      // A diferença deve ser mínima (sem revelar se email existe)
+      const timeDifference = Math.abs(avgExistent - avgNonExistent);
+      expect(timeDifference).toBeLessThan(50); // 50ms é aceitável
+    });
+  });
+
+  describe("Proteção contra unicode/encoding bypass", () => {
+    test("Email em unicode normalizado corretamente", async () => {
+      await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+
+      // Tenta com variação unicode (ex: café vs café)
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user+café@example.com", // com acento
+          password: "senha123",
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    test("Email com espaços em branco é rejeitado", async () => {
+      await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: " user@example.com ", // com espaços
+          password: "senha123",
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe("Proteção contra logical bypass", () => {
+    test("Não permite login sem o campo email", async () => {
+      await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // email ausente
+          password: "senha123",
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    test("Não permite login sem o campo password", async () => {
+      await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user@example.com",
+          // password ausente
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    test("Ignora campos adicionais maliciosos", async () => {
+      const user = await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+      await orchestrator.activateUser(user);
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+          isAdmin: true, // tenta fazer-se admin
+          user_id: "fake-uuid", // tenta especificar user_id
+          features: ["admin:access"], // tenta adicionar features
+        }),
+      });
+
+      expect(response.status).toBe(201);
+      const body = await response.json();
+      expect(body.user_id).toBe(user.id);
+    });
+  });
+
+  describe("Proteção de recursos críticos", () => {
+    test("Múltiplas sessões ativas para o mesmo usuário", async () => {
+      const user = await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+      await orchestrator.activateUser(user);
+
+      const sessions = [];
+
+      // Cria 3 sessões para o mesmo usuário
+      for (let i = 0; i < 3; i++) {
+        const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "user@example.com",
+            password: "senha123",
+          }),
+        });
+
+        const session = await response.json();
+        sessions.push(session);
+      }
+
+      // Verifica que todas as 3 sessões são válidas
+      for (const session of sessions) {
+        const userResponse = await fetch(`${webserver.origin}/api/v1/user`, {
+          method: "GET",
+          headers: { Cookie: `session_id=${session.token}` },
+        });
+
+        expect(userResponse.status).toBe(200);
+      }
+
+      // Todas devem estar ativas
+      expect(sessions.length).toBe(3);
+      const tokenSet = new Set(sessions.map((s) => s.token));
+      expect(tokenSet.size).toBe(3); // todos os tokens devem ser únicos
+    });
+  });
+
+  describe("Proteção contra parameter pollution", () => {
+    test("Não interpreta array de emails", async () => {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: ["user@example.com", "admin@example.com"],
+          password: "senha123",
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    test("Não interpreta array de senhas", async () => {
+      await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: ["senha123", "outra-senha"],
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    test("Não interpreta objeto como email", async () => {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: { value: "user@example.com" },
+          password: "senha123",
+        }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe("Object/Prototype Pollution", () => {
+    test("Não permite poluição de objeto via __proto__ no payload", async () => {
+      // Garante que o protótipo está limpo antes do teste
+      expect({}.polluted).toBeUndefined();
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+          __proto__: { polluted: "yes" },
+        }),
+      });
+
+      // O endpoint deve responder normalmente (provavelmente 401, pois o usuário não existe)
+      expect([400, 401, 403, 404]).toContain(response.status);
+
+      // O protótipo global não deve ser poluído
+      expect({}.polluted).toBeUndefined();
+    });
+
+    test("Não permite poluição de objeto via constructor no payload", async () => {
+      expect({}.polluted).toBeUndefined();
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+          constructor: { prototype: { polluted: "yes" } },
+        }),
+      });
+
+      expect([400, 401, 403, 404]).toContain(response.status);
+      expect({}.polluted).toBeUndefined();
+    });
+  });
+
+  describe("Proteção contra response manipulation", () => {
+    test("Resposta de erro não contém informações sensíveis", async () => {
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "nonexistent@example.com",
+          password: "anypassword",
+        }),
+      });
+
+      const body = await response.json();
+      const responseString = JSON.stringify(body);
+
+      // Não deve conter informações de banco de dados
+      expect(responseString).not.toMatch(/sql/i);
+      expect(responseString).not.toMatch(/postgres/i);
+      expect(responseString).not.toMatch(/database/i);
+      expect(responseString).not.toMatch(/query/i);
+
+      // Não deve conter paths de arquivo
+      expect(responseString).not.toMatch(/\/home\//);
+      expect(responseString).not.toMatch(/\/app\//);
+    });
+
+    test("Status code não revela informações extras", async () => {
+      const responses = [];
+
+      // Tenta vários cenários
+      responses.push(
+        await fetch(`${webserver.origin}/api/v1/sessions`, {
+          method: "POST",
+          body: JSON.stringify({ email: "fake@example.com", password: "fake" }),
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      responses.push(
+        await fetch(`${webserver.origin}/api/v1/sessions`, {
+          method: "POST",
+          body: JSON.stringify({
+            email: "invalid-email",
+            password: "anypassword",
+          }),
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      // Todos retornam apenas 401, sem diferenciar
+      for (const response of responses) {
+        expect(response.status).toBe(401);
+      }
+    });
+  });
+
+  describe("Proteção contra header injection", () => {
+    test("Content-Type forçado não bypassa validação", async () => {
+      const user = await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+      await orchestrator.activateUser(user);
+
+      const response = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
+      });
+
+      // Ainda deve aceitar se o body for JSON válido
+      // ou rejeitar se não conseguir parsear
+      expect([200, 201, 400, 401]).toContain(response.status);
+    });
+  });
+
+  describe("Proteção contra concurrent access", () => {
+    test("Logout de uma sessão não afeta outra sessão ativa", async () => {
+      const user = await orchestrator.createUser({
+        email: "user@example.com",
+        password: "senha123",
+      });
+      await orchestrator.activateUser(user);
+
+      // Cria duas sessões
+      const response1 = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
+      });
+      const session1 = await response1.json();
+
+      const response2 = await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "senha123",
+        }),
+      });
+      const session2 = await response2.json();
+
+      // Faz logout com a primeira sessão
+      await fetch(`${webserver.origin}/api/v1/sessions`, {
+        method: "DELETE",
+        headers: { Cookie: `session_id=${session1.token}` },
+      });
+
+      // Segunda sessão ainda deve ser válida
+      const checkSession2 = await fetch(`${webserver.origin}/api/v1/user`, {
+        method: "GET",
+        headers: { Cookie: `session_id=${session2.token}` },
+      });
+
+      expect(checkSession2.status).toBe(200);
+
+      // Primeira sessão deve estar expirada
+      const checkSession1 = await fetch(`${webserver.origin}/api/v1/user`, {
+        method: "GET",
+        headers: { Cookie: `session_id=${session1.token}` },
+      });
+
+      expect(checkSession1.status).toBe(401);
+    });
+  });
+
+  describe("/status", () => {
+    test("Teste de SQL Injection", async () => {
+      const response1 = await fetch(
+        `${webserver.origin}/api/v1/status?datname='tabnews';`,
+      );
+      const response2 = await fetch(
+        `${webserver.origin}/api/v1/status?datname=';`,
+      );
+      const response3 = await fetch(
+        `${webserver.origin}/api/v1/status?datname='; SELECT pg_sleep(4); --`,
+      );
+
+      expect(response1.status).toBe(200);
+      expect(response2.status).toBe(200);
+      expect(response3.status).toBe(200);
     });
   });
 });

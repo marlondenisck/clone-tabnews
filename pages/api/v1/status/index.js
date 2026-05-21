@@ -1,32 +1,39 @@
 import { createRouter } from "next-connect";
-import database from "infra/database";
 import controller from "infra/controller";
+import status from "@/models/status";
+import authorization from "@/models/authorization";
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
+router.use(controller.injectAnonymousOrUser);
 router.get(getHandler);
 
 export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
+  const userTryingToGet = request.context.user;
+
   const updateAt = new Date().toISOString();
+  const databaseVersion = await status.databaseVersion();
+  const maxConnections = await status.maxConnections();
+  const usedConnections = await status.usedConnections();
 
-  const databaseVersionResult = await database.query("SHOW server_version;");
-  const databaseVersion = databaseVersionResult.rows[0].server_version;
-
-  const selectMaxConnections = await database.query("SHOW max_connections;");
-  const maxConnections = selectMaxConnections.rows[0].max_connections;
-
-  const dataBaseName = process.env.POSTGRES_DB;
-  const selectUsedConnections = await database.query({
-    text: "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1 AND state = 'active';",
-    values: [dataBaseName],
-  });
-  const usedConnections = selectUsedConnections.rows[0].count;
-
-  response.status(200).json({
+  const statusObject = {
     update_at: updateAt,
-    postgres_version: databaseVersion,
-    max_connections: +maxConnections,
-    used_connections: +usedConnections,
-  });
+    dependencies: {
+      database: {
+        version: databaseVersion,
+        max_connections: +maxConnections,
+        used_connections: +usedConnections,
+      },
+    },
+  };
+
+  const secureOutput = authorization.filterOutput(
+    userTryingToGet,
+    availableFeatures.READ_STATUS,
+    statusObject,
+  );
+
+  return response.status(200).json(secureOutput);
 }

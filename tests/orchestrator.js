@@ -2,10 +2,12 @@ import retry from "async-retry";
 import { faker } from "@faker-js/faker";
 
 import database from "infra/database";
+import webserver from "@/infra/webserver";
 
 import migrator from "models/migrator";
 import user from "models/user";
 import session from "models/session";
+import activation from "models/activation";
 
 const emailHttpURL = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
 
@@ -20,7 +22,7 @@ async function waitForAllServices() {
     });
 
     async function fetchStatusPage() {
-      const response = await fetch("http://localhost:3000/api/v1/status");
+      const response = await fetch(`${webserver.origin}/api/v1/status`);
 
       if (response.status !== 200) {
         throw Error();
@@ -62,8 +64,17 @@ async function createUser(userObject = {}) {
   });
 }
 
-async function createSession(userId) {
-  return session.create(userId);
+async function createSession(userObjectId) {
+  return await session.create(userObjectId);
+}
+
+async function activateUser(inactiveUser) {
+  return await activation.activateUserByUserId(inactiveUser.id);
+}
+
+async function addFeaturesToUser(userObject, features) {
+  const updatedUser = await user.addFeatures(userObject.id, features);
+  return updatedUser;
 }
 
 async function deleteAllEmails() {
@@ -77,13 +88,22 @@ async function getLastEmail() {
   const emailsListBody = await emailListResponse.json();
   const lastEmailItem = emailsListBody.pop();
 
+  if (!lastEmailItem) {
+    return null;
+  }
+
   const emailTextResponse = await fetch(
     `${emailHttpURL}/messages/${lastEmailItem.id}.plain`,
   );
   const emailTextBody = await emailTextResponse.text();
-  lastEmailItem.text = emailTextBody;
 
+  lastEmailItem.text = emailTextBody;
   return lastEmailItem;
+}
+
+function extractUUID(text) {
+  const match = text.match(/[0-9a-fA-F-]{36}/);
+  return match ? match[0] : null;
 }
 
 const orchestrator = {
@@ -92,8 +112,11 @@ const orchestrator = {
   runPendingMigrations,
   createUser,
   createSession,
+  activateUser,
   deleteAllEmails,
   getLastEmail,
+  extractUUID,
+  addFeaturesToUser,
 };
 
 export default orchestrator;

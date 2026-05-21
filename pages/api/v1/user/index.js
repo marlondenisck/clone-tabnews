@@ -3,15 +3,19 @@ import controller from "infra/controller";
 
 import user from "models/user";
 import session from "models/session";
+import authorization from "@/models/authorization";
+
+import availableFeatures from "@/infra/features";
 
 const router = createRouter();
-
-router.get(getHandler);
+router.use(controller.injectAnonymousOrUser); // middleware
+router.get(controller.canRequest(availableFeatures.READ_SESSION), getHandler);
 
 export default router.handler(controller.errorHandlers);
 
 async function getHandler(request, response) {
   const sessionToken = request.cookies.session_id;
+  const userTryingToGet = request.context.user;
 
   const sessionObj = await session.findOneValidByToken(sessionToken);
   const renewedSession = await session.renew(sessionObj.id);
@@ -22,5 +26,12 @@ async function getHandler(request, response) {
     "Cache-Control",
     "no-store, no-cache, max-age=0, must-revalidate",
   );
-  return response.status(200).json(userFound);
+
+  const secureOutputValues = authorization.filterOutput(
+    userTryingToGet, // usuário que está tentando acessar
+    availableFeatures.READ_USER_SELF, // feature necessária para ler os dados do usuário
+    userFound, // recurso encontrado que será filtrado
+  );
+
+  return response.status(200).json(secureOutputValues);
 }
