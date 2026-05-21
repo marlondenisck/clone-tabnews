@@ -1,19 +1,19 @@
-import database from "infra/database";
+import { jest } from "@jest/globals";
 import { ServiceError } from "infra/errors";
 
 const mockEnd = jest.fn();
 const mockClientQuery = jest.fn();
 const mockConnect = jest.fn();
 
-jest.mock("pg", () => {
-  return {
-    Client: jest.fn(() => ({
-      connect: mockConnect,
-      query: mockClientQuery,
-      end: mockEnd,
-    })),
-  };
-});
+jest.unstable_mockModule("pg", () => ({
+  Client: jest.fn(() => ({
+    connect: mockConnect,
+    query: mockClientQuery,
+    end: mockEnd,
+  })),
+}));
+
+const { default: database } = await import("infra/database");
 
 describe("database.query()", () => {
   beforeEach(() => {

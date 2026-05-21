@@ -1,3 +1,4 @@
+import { jest } from "@jest/globals";
 import { version as uuidVersion } from "uuid";
 import activation from "@/models/activation";
 import user from "@/models/user";

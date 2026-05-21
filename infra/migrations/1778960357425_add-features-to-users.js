@@ -1,4 +1,4 @@
-exports.up = (pgm) => {
+export const up = (pgm) => {
   pgm.addColumn("users", {
     features: {
       type: "varchar[]", // Array de strings
@@ -8,4 +8,4 @@ exports.up = (pgm) => {
   });
 };
 
-exports.down = false;
+export const down = false;

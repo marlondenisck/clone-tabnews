@@ -1,4 +1,4 @@
-exports.up = (pgm) => {
+export const up = (pgm) => {
   pgm.createTable("user_activation_tokens", {
     id: {
       type: "uuid",
@@ -30,4 +30,4 @@ exports.up = (pgm) => {
   });
 };
 
-exports.down = false;
+export const down = false;

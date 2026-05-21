@@ -1,3 +1,4 @@
+import { jest } from "@jest/globals";
 import { version as uuidVersion } from "uuid";
 import setCookieParser from "set-cookie-parser";
 import orchestrator from "tests/orchestrator";
